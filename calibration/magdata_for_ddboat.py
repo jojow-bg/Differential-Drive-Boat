@@ -3,8 +3,8 @@ import numpy as np
 
 
 def generate_data_with_ddboat(tmax, dt):
-    sys.path.append('../drivers-ddboat-v2')
-    from imu9_driver_v2 import Imu9IO
+   
+    from drivers.imu9_driver_v2 import Imu9IO
     imu = Imu9IO()
 
     def generate_cloud_with_ddboat(tmax, dt):
