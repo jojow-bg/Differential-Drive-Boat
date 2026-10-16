@@ -36,7 +36,8 @@ def get_bearing(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     
     return math.atan2(y, x)
 
-def get_distance(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
+
+def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     """
     Retourne la distance en mètres entre deux points GPS.
     """    
@@ -49,6 +50,8 @@ def get_distance(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     
     return R_EARTH * c
+
+
 
 def nmea_to_radians(raw_coord, direction):
     """
@@ -82,7 +85,24 @@ ard = ArduinoIO()
 lat, lon = None, None
 n_try = 0
 
-def go_to_waypoint(target_lat, target_lon,tol=2.0):
+def go_to_waypoint_gps(target_lat, target_lon,tol=2.0):
+    """
+    Fonction principale pour naviguer vers un waypoint GPS.
+    
+    arguments:
+    target_lat : latitude du waypoint en radians
+    target_lon : longitude du waypoint en radians
+    tol : tolérance en mètres pour considérer que le waypoint est atteint
+
+    fonctionnement:
+    1. Lit les coordonnées GPS actuelles du bateau.
+    2. Calcule la distance et le cap vers le waypoint.
+    3. Lit le magnétomètre pour obtenir le cap actuel du bateau.
+    4. Calcule l'erreur de cap et ajuste les moteurs pour corriger la trajectoire.
+        4.1 : la fonction compute_commands() n'est pas différentielle (à modifier peut être dans le futur)
+    5. Répète jusqu'à ce que le bateau atteigne le waypoint.
+    """
+
     global lat, lon, n_try
     target_done = False 
     
@@ -102,7 +122,7 @@ def go_to_waypoint(target_lat, target_lon,tol=2.0):
             lon_rad = nmea_to_radians(lon, dir_lon)
 
         # On vérifie si on atteint la cible
-        dist = get_distance(lat_rad, lon_rad, target_lat, target_lon)
+        dist = get_distance_with_gps(lat_rad, lon_rad, target_lat, target_lon)
         if dist < tol:
             target_done = True
 
