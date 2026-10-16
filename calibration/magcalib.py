@@ -2,7 +2,7 @@ import csv
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-from scipy.linalg import sqrtm,inv,eig, norm
+
 import os
 import sys
 import numpy as np
@@ -57,7 +57,7 @@ def save_calibration_json(filepath, invA, xbar):
     }
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=4)
-    print(f"Matrices d'étalonnage sauvegardées dans '{filepath}'")
+    #print(f"Matrices d'étalonnage sauvegardées dans '{filepath}'")
 
 def load_calibration_json(filepath="mag_calib_params.json"):
     """
@@ -73,6 +73,8 @@ def load_calibration_json(filepath="mag_calib_params.json"):
 
 
 if __name__ == "__main__" :
+    from scipy.linalg import sqrtm,inv,eig, norm
+    
     x1,x2,x3 = np.loadtxt('magcloud.csv', delimiter=',', unpack=True)
 
     fig = plt.figure(figsize=(8,8))

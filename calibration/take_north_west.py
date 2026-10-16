@@ -14,7 +14,7 @@ n = 10
 # --- NORTH ---
 seconds = 20
 while seconds > 0:
-    print(f"{seconds} restantes avant north", end="\r")
+    print("{} restantes avant north".format(seconds))
     time.sleep(1)
     seconds -= 1
 
@@ -30,7 +30,7 @@ np.savetxt("x_north.csv", data_north, delimiter=',')
 # --- WEST ---
 seconds = 20
 while seconds > 0:
-    print(f"{seconds} restantes avant west", end="\r")
+    print("{} restantes avant west".format(seconds))
     time.sleep(1)
     seconds -= 1
 
