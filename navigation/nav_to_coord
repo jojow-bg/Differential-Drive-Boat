@@ -1,0 +1,111 @@
+import numpy as np
+import math
+import time
+
+from calibration.magcalib import load_calibration_json
+from controller.ddboat import control_motor
+from drivers.arduino_driver_v2 import ArduinoIO
+from drivers.gps_driver_v2 import GpsIO
+from drivers.imu9_driver_v2 import Imu9IO
+
+
+R_EARTH = 6371000
+INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
+PWM_MOTOR = 100
+
+def get_calibrated_heading(raw_mag):
+    """Retourne le cap thêta du bateau à partir de la mesure brute."""
+    y = INV_A @ (raw_mag - X_BAR)
+    return -math.atan2(y[1, 0], y[0, 0]) 
+
+def sawtooth(alpha):
+    return (alpha + np.pi) % (2 * np.pi) - np.pi
+
+def get_bearing(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
+    """
+    Calcule le cap désiré en radians (dans [-pi, pi])
+    du point 1 vers le point 2.
+    0 = Nord, pi/2 = Est, -pi/2 = Ouest, pi/-pi = Sud.
+    """
+    dlon = lon2_rad - lon1_rad
+    
+    y = math.sin(dlon) * math.cos(lat2_rad)
+    x = (math.cos(lat1_rad) * math.sin(lat2_rad) - 
+         math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon))
+    
+    return math.atan2(y, x)
+
+def get_distance(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
+    """
+    Retourne la distance en mètres entre deux points GPS.
+    """    
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+    
+    a = (math.sin(dlat / 2)**2 + 
+         math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2)
+    
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R_EARTH * c
+
+def nmea_to_radians(raw_coord, direction):
+    """
+    Convertit une coordonnée NMEA (DDMM.MMMM) en radians.
+    Prend en compte l'orientation ('N', 'S', 'E', 'W').
+    """
+    deg = int(raw_coord / 100)
+    minutes = raw_coord - (deg * 100)
+    decimal_degrees = deg + minutes / 60.0
+    
+    if direction in ['S', 'W']:
+        decimal_degrees = -decimal_degrees
+        
+    return np.radians(decimal_degrees)
+
+def compute_commands(error_theta,PWM_MOTOR=PWM_MOTOR):
+    if error_theta > np.deg2rad(10):
+        return 0, PWM_MOTOR
+    elif error_theta < np.deg2rad(-10):
+        return PWM_MOTOR, 0
+    else:
+        return PWM_MOTOR, PWM_MOTOR
+
+
+
+
+# --- 3. BOUCLE DE GUIDAGE ---
+# Coordonnées GPS de la cible
+target_lat = 0.845059
+target_lon = -0.078067
+
+gps = GpsIO()
+imu = Imu9IO()
+ard = ArduinoIO()
+
+lat, lon = None, None
+
+while True:
+
+    while lat is None or lon is None:
+        msg, val = gps.read_gll_non_blocking()
+        if msg and val[0]!=0:
+            lat, dir_lat, lon, dir_lon = val
+            lat_rad = nmea_to_radians(lat, dir_lat)
+            lon_rad = nmea_to_radians(lon, dir_lon)
+
+    raw_mag = imu.read_mag_raw().reshape(3, 1) 
+    theta = get_calibrated_heading(raw_mag)
+
+    dist = get_distance(lat_rad, lon_rad, target_lat, target_lon)
+    if dist < 4:
+        control_motor(0, 0, ard)
+        break
+
+    theta_d = get_bearing(lat_rad, lon_rad, target_lat, target_lon)
+    error_theta = sawtooth(theta_d - theta)
+    
+    cmd_left, cmd_right = compute_commands(error_theta, PWM_MOTOR)
+    control_motor(cmd_left, cmd_right, ard)
+
+    time.sleep(0.1)
