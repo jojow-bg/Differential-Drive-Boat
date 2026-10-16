@@ -16,7 +16,7 @@ def generate_data_with_ddboat(tmax, dt):
             data[i, :] = [x[0, 0], x[1, 0], x[2, 0]]
             time.sleep(dt)
 
-        np.savetxt("magdata.csv", data, fmt='%.4f', delimiter=',')
+        np.savetxt("magcloud.csv", data, fmt='%.4f', delimiter=',')
 
     generate_cloud_with_ddboat(tmax, dt)
 
