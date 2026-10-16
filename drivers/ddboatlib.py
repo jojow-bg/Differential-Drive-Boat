@@ -43,8 +43,7 @@ def draw_polygon(ax,P,col,alpha0=0.4):
     ax.add_collection(p)
 
 
-def drawEllipsoid(ax,c,Q,β=1): #(x-c)^T * Q * (x-c) = β^2
-    Q=((1/β)**2)*Q
+def drawEllipsoid(ax,c,Q): #(x-c)^T * Q (x-c) = 1
     eigvals, eigvecs = np.linalg.eigh(Q)
     radii = np.sqrt(eigvals)
     radii = 1./radii
