@@ -12,6 +12,7 @@ from drivers.imu9_driver_v2 import Imu9IO
 R_EARTH = 6371000
 INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
 PWM_MOTOR = 100
+SHOW_PRINT = True
 
 def get_calibrated_heading(raw_mag):
     """Retourne le cap thêta du bateau à partir de la mesure brute."""
@@ -71,11 +72,6 @@ def compute_commands(error_theta,PWM_MOTOR=PWM_MOTOR):
     else:
         return PWM_MOTOR, PWM_MOTOR
 
-
-
-
-# --- 3. BOUCLE DE GUIDAGE ---
-# Coordonnées GPS de la cible
 target_lat = 0.845059
 target_lon = -0.078067
 
@@ -84,28 +80,41 @@ imu = Imu9IO()
 ard = ArduinoIO()
 
 lat, lon = None, None
+n_try = 0
 
-while True:
+def go_to_waypoint(target_lat, target_lon,tol=2.0):
+    global lat, lon, n_try
+    target_done = False 
+    
+    while not target_done:
 
-    while lat is None or lon is None:
-        msg, val = gps.read_gll_non_blocking()
+        #On extrait les coordonnées GPS
+        while lat is None or lon is None:
+            n_try += 1
+            msg, val = gps.read_gll_non_blocking()
+
+            if n_try%100 == 0 and SHOW_PRINT:
+                print("Tentative ",n_try," de lecture du GPS...")
+
         if msg and val[0]!=0:
             lat, dir_lat, lon, dir_lon = val
             lat_rad = nmea_to_radians(lat, dir_lat)
             lon_rad = nmea_to_radians(lon, dir_lon)
 
-    raw_mag = imu.read_mag_raw().reshape(3, 1) 
-    theta = get_calibrated_heading(raw_mag)
+        # On vérifie si on atteint la cible
+        dist = get_distance(lat_rad, lon_rad, target_lat, target_lon)
+        if dist < tol:
+            target_done = True
 
-    dist = get_distance(lat_rad, lon_rad, target_lat, target_lon)
-    if dist < 4:
-        control_motor(0, 0, ard)
-        break
+        #On extrait le magnétisme et calcul le cap du bateau grâce à la calibration
+        raw_mag = np.array(imu.read_mag_raw()).reshape(3, 1)
+        theta = get_calibrated_heading(raw_mag)
+        
+        #On calcule le cap désiré et l'erreur de cap
+        theta_d = get_bearing(lat_rad, lon_rad, target_lat, target_lon)
+        error_theta = sawtooth(theta_d - theta)
+        
+        cmd_left, cmd_right = compute_commands(error_theta, PWM_MOTOR)
+        control_motor(cmd_left, cmd_right, ard)
 
-    theta_d = get_bearing(lat_rad, lon_rad, target_lat, target_lon)
-    error_theta = sawtooth(theta_d - theta)
-    
-    cmd_left, cmd_right = compute_commands(error_theta, PWM_MOTOR)
-    control_motor(cmd_left, cmd_right, ard)
-
-    time.sleep(0.1)
+        time.sleep(0.1)
