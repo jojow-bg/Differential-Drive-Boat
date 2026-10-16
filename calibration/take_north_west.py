@@ -1,5 +1,10 @@
 import sys, time
 import numpy as np
+import os
+
+# Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
+dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(dossier_parent)
 
 from drivers.imu9_driver_v2 import Imu9IO
 imu = Imu9IO()
@@ -7,7 +12,7 @@ imu = Imu9IO()
 n = 10
 
 # --- NORTH ---
-seconds = 120
+seconds = 20
 while seconds > 0:
     print(f"{seconds} restantes avant north", end="\r")
     time.sleep(1)
@@ -23,7 +28,7 @@ np.savetxt("x_north.csv", data_north, delimiter=',')
 
 
 # --- WEST ---
-seconds = 60
+seconds = 20
 while seconds > 0:
     print(f"{seconds} restantes avant west", end="\r")
     time.sleep(1)

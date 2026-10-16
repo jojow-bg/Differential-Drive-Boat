@@ -3,6 +3,15 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy.linalg import sqrtm,inv,eig, norm
+import os
+import sys
+import numpy as np
+import json
+
+# Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
+dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(dossier_parent)
+
 from drivers.ddboatlib import drawEllipsoid
 
 
@@ -40,32 +49,56 @@ def mag_calib(x1,x2,x3,xnorth,xwest):
     return invA,xbar
 
 
+def save_calibration_json(filepath, invA, xbar):
+    """Sauvegarde invA et xbar dans un fichier JSON."""
+    data = {
+        "invA": invA.tolist(),
+        "xbar": xbar.tolist()
+    }
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=4)
+    print(f"Matrices d'étalonnage sauvegardées dans '{filepath}'")
 
-import numpy as np
+def load_calibration_json(filepath="mag_calib_params.json"):
+    """
+    Lit le fichier JSON d'étalonnage et renvoie invA et xbar sous forme de np.ndarray.
+    """
+    with open(filepath, 'r') as f:
+        data = json.load(f)
+    
+    invA = np.array(data["invA"], dtype=float)
+    xbar = np.array(data["xbar"], dtype=float)
+    return invA, xbar
 
-x1,x2,x3 = np.loadtxt('magcloud.csv', delimiter=',', unpack=True)
 
-fig = plt.figure(figsize=(8,8))
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(x1,x2,x3,c="blue")
-plt.pause(0.1)
 
-data_north = np.loadtxt('x_north.csv', delimiter=',')
-data_west = np.loadtxt('x_west.csv', delimiter=',')
-xnorth = np.mean(data_north, axis=0).reshape(3, 1)
-xwest = np.mean(data_west, axis=0).reshape(3, 1)
+if __name__ == "__main__" :
+    x1,x2,x3 = np.loadtxt('magcloud.csv', delimiter=',', unpack=True)
 
-print("xnorth:", xnorth)
-print("xwest:", xwest)
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x1,x2,x3,c="blue")
+    plt.pause(0.1)
 
-ax.scatter(*xnorth[:,0],c="red")
-ax.scatter(*xwest[:,0],c="red")
+    data_north = np.loadtxt('x_north.csv', delimiter=',')
+    data_west = np.loadtxt('x_west.csv', delimiter=',')
+    xnorth = np.mean(data_north, axis=0).reshape(3, 1)
+    xwest = np.mean(data_west, axis=0).reshape(3, 1)
 
-invA,xbar=mag_calib(x1,x2,x3,xnorth,xwest)
-print("Ahat= ",inv(invA))
-print("xbar=",xbar)
-drawEllipsoid(ax,xbar,invA.T@invA)
+    print("xnorth:", xnorth)
+    print("xwest:", xwest)
 
-plt.show()
+    ax.scatter(*xnorth[:,0],c="red")
+    ax.scatter(*xwest[:,0],c="red")
+
+    invA,xbar=mag_calib(x1,x2,x3,xnorth,xwest)
+    print("Ahat= ",inv(invA))
+    print("xbar=",xbar)
+
+    save_calibration_json("mag_calib_params.json", invA, xbar)
+
+    drawEllipsoid(ax,xbar,invA.T@invA)
+
+    plt.show()
 
 

@@ -1,6 +1,10 @@
 import sys, time
 import numpy as np
+import os
 
+# Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
+dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(dossier_parent)
 
 def generate_data_with_ddboat(tmax, dt):
    
