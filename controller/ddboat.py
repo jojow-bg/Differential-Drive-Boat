@@ -25,6 +25,7 @@ class ddboat:
         try:
             left_speed = int(left_speed)
             right_speed = int(right_speed)
+            
         except ValueError:
             print("Erreur : les vitesses doivent etre des nombres entiers.")
             print("Exemple : python3 prog.py 20 20")
