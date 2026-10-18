@@ -67,7 +67,7 @@ def nmea_to_radians(raw_coord, direction):
         
     return np.radians(decimal_degrees)
 
-def compute_commands(error_theta,PWM_MOTOR=PWM_MOTOR):
+def compute_commands_TOR(error_theta,PWM_MOTOR=PWM_MOTOR):
     if error_theta > np.deg2rad(10):
         return 0, PWM_MOTOR
     elif error_theta < np.deg2rad(-10):
@@ -85,7 +85,7 @@ ard = ArduinoIO()
 lat, lon = None, None
 n_try = 0
 
-def go_to_waypoint_gps(target_lat, target_lon,tol=2.0):
+def go_to_waypoint_gps(ddboat, target_lat, target_lon,tol=2.0):
     """
     Fonction principale pour naviguer vers un waypoint GPS.
     
@@ -134,7 +134,7 @@ def go_to_waypoint_gps(target_lat, target_lon,tol=2.0):
         theta_d = get_bearing(lat_rad, lon_rad, target_lat, target_lon)
         error_theta = sawtooth(theta_d - theta)
         
-        cmd_left, cmd_right = compute_commands(error_theta, PWM_MOTOR)
-        control_motor(cmd_left, cmd_right, ard)
+        cmd_left, cmd_right = compute_commands_TOR(error_theta, PWM_MOTOR)
+        ddboat.control_motor(cmd_left, cmd_right)
 
-        time.sleep(0.1)
+        time.sleep(0.01)

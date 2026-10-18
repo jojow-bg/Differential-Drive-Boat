@@ -1,19 +1,31 @@
 import sys
 import time
 import os
-import drivers.arduino_driver_v2 as arddrv
-import controller.ddboat as ddboat
+
+from controller.ddboat import ddboat
+from drivers.arduino_driver_v2 import ArduinoIO
+from drivers.gps_driver_v2 import GpsIO
+from drivers_old.imu9_driver_v2 import Imu9IO
 
 
 def main(): 
-    # Creation de l'objet Arduino
-    ard = arddrv.ArduinoIO()
 
-    ddboat.control_motor(0, 100, ard)
+    #Instanciation des objets et de la classe ddboat
+    ard = ArduinoIO()
+    gps = GpsIO()
+    imu = Imu9IO()
+
+    ddboat = ddboat(ard, imu, gps)
+
+
+    # Commande de la mission
+    ddboat.control_motor(0, 100)
 
     time.sleep(2)
 
-    ddboat.stop_motor(ard)
+    ddboat.stop_motor()
+
+    
 
 if __name__ == "__main__":
     main()
