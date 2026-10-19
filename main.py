@@ -15,13 +15,8 @@ def main():
     gps = GpsIO()
     imu = Imu9IO()
     ddboat = ddboat(ard, imu, gps)
-
-    while MISSION:
-        ddboat.update_position()
-        ddboat.update_heading()
-
-
     ddboat.back_to_base()
+    ddboat.stop_motor()
 
 
 if __name__ == "__main__":
