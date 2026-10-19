@@ -3,8 +3,6 @@ import sys
 import time
 import os
 import numpy as np
-
-from exemples.drones_exo.ddboatlib import sawtooth
 import math
 
 # Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
@@ -12,8 +10,11 @@ dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
 import drivers.arduino_driver_v2 as arddrv
-#from navigation.nav_to_coords_gps import nmea_to_radians
-#from navigation.nav_to_coords_gps import latlong2local
+from navigation.navigation_utils import (
+    sawtooth,
+    nmea_to_radians,
+    latlong2local
+)
 from calibration.calibration_utils import load_calibration_json
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
@@ -36,7 +37,7 @@ class ddboat:
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
         if msg and val[0]!=0:
-            lat, dir_lat, lon, dir_lon = val
+            lat, dir_lat, lon, dir_lon = val[:4]
             lat_rad = nmea_to_radians(lat, dir_lat)
             lon_rad = nmea_to_radians(lon, dir_lon)
             self.lat_rad = lat_rad
