@@ -1,5 +1,6 @@
 import smbus
 import time
+
 class i2c():
     def __init__(self,addr,bus_nb=2):
         self.__bus_nb = bus_nb
