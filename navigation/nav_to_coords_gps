@@ -16,6 +16,7 @@ SHOW_PRINT = True
 
 def get_calibrated_heading(raw_mag):
     """Retourne le cap thêta du bateau à partir de la mesure brute."""
+    
     y = INV_A @ (raw_mag - X_BAR)
     return -math.atan2(y[1, 0], y[0, 0]) 
 
