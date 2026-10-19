@@ -12,9 +12,9 @@ dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
 import drivers.arduino_driver_v2 as arddrv
-from navigation.nav_to_coords_gps import nmea_to_radians
-from navigation.nav_to_coords_gps import latlong2local
-from calibration.magcalib import load_calibration_json
+#from navigation.nav_to_coords_gps import nmea_to_radians
+#from navigation.nav_to_coords_gps import latlong2local
+from calibration.calibration_utils import load_calibration_json
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
@@ -99,7 +99,7 @@ class ddboat:
     
     def back_to_base(self):
         current_pos =np.array([[self.x], [self.y]])
-
+        """
         lat_A = 
         lon_A =
         lat_B =
@@ -134,5 +134,5 @@ class ddboat:
             target_heading = np.atan2(target_vector[0][1], target_vector[0][0])
 
             self.follow_heading(target_heading, Kp=50.0)
-
+        """
         return True #Pour faire un if back_to_base ensuite
