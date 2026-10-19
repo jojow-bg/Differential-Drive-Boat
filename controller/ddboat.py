@@ -1,12 +1,19 @@
 import sys
 import time
 import os
+import math
 
 # Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
 dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
 import drivers.arduino_driver_v2 as arddrv
+from calibration.magcalib import load_calibration_json
+from controller.ddboat import control_motor
+from drivers.arduino_driver_v2 import ArduinoIO
+from drivers.gps_driver_v2 import GpsIO
+from drivers.imu9_driver_v2 import Imu9IO
+
 
 class ddboat:
 
@@ -34,9 +41,7 @@ class ddboat:
 
         # Envoi des vitesses aux propulseurs
         self.ard.send_arduino_cmd_motor(left_speed, right_speed) 
-        
-        # Maintien de la commande pendant 2 secondes
-        #time.sleep(2)
+    
 
     def stop_motor(self):
         # Arret des propulseurs
@@ -46,3 +51,9 @@ class ddboat:
     def back_to_base(self):
         pass #A faire avec les coordonnées GPS de la base
         # mettre un ralentissment dans les 5 dernières mètres
+
+    def get_calibrated_heading(raw_mag):
+        """Retourne le cap thêta du bateau à partir de la mesure brute."""
+        INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
+        y = INV_A @ (raw_mag - X_BAR)
+        return -math.atan2(y[1, 0], y[0, 0]) 

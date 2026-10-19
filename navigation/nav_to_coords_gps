@@ -7,17 +7,13 @@ from controller.ddboat import control_motor
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
+from controller.ddboat import ddboat
 
 
 R_EARTH = 6371000
 INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
 PWM_MOTOR = 100
 SHOW_PRINT = True
-
-def get_calibrated_heading(raw_mag):
-    """Retourne le cap thêta du bateau à partir de la mesure brute."""
-    y = INV_A @ (raw_mag - X_BAR)
-    return -math.atan2(y[1, 0], y[0, 0]) 
 
 def sawtooth(alpha):
     return (alpha + np.pi) % (2 * np.pi) - np.pi
@@ -131,7 +127,7 @@ def go_to_waypoint_gps(ddboat, target_lat, target_lon,tol=2.0):
 
         #On extrait le magnétisme et calcul le cap du bateau grâce à la calibration
         raw_mag = np.array(imu.read_mag_raw()).reshape(3, 1)
-        theta = get_calibrated_heading(raw_mag)
+        theta = ddboat.get_calibrated_heading(raw_mag)
         
         #On calcule le cap désiré et l'erreur de cap
         theta_d = get_bearing(lat_rad, lon_rad, target_lat, target_lon)
