@@ -15,6 +15,12 @@ INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
 PWM_MOTOR = 100
 SHOW_PRINT = True
 
+def get_calibrated_heading(raw_mag):
+    """Retourne le cap thêta du bateau à partir de la mesure brute."""
+    
+    y = INV_A @ (raw_mag - X_BAR)
+    return -math.atan2(y[1, 0], y[0, 0]) 
+
 def sawtooth(alpha):
     return (alpha + np.pi) % (2 * np.pi) - np.pi
 
@@ -47,9 +53,14 @@ def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     
     return R_EARTH * c
 
+def latlong2local(lat, lon, lat_origin, lon_origin):
+    x = R_EARTH * np.cos(lat_origin) * (lon - lon_origin)
+    y = R_EARTH * (lat - lat_origin)
+    return x, y
+
 
 def latlong2cart(lx,ly,ρ=R_EARTH): 
-    return ρ*np.array([[np.cos(ly)*np.cos(lx)],[np.cos(ly)*np.sin(lx)],[np.sin(ly)] ])  
+    return ρ*np.array([[np.cos(ly)*np.cos(lx)],[np.cos(ly)*np.sin(lx)],[np.sin(ly)]])  
 
 
 def nmea_to_radians(raw_coord, direction):
