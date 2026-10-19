@@ -255,7 +255,7 @@ def go_to_waypoint_gps(
                 imu.read_mag_raw()
             ).reshape(3, 1)
 
-            theta = ddboat.get_calibrated_heading(raw_mag)
+            theta = boat.get_calibrated_heading(raw_mag)
 
             # ------------------------------------------
             # 2. Pas encore de position GPS
@@ -263,7 +263,7 @@ def go_to_waypoint_gps(
 
             if current_lat is None or current_lon is None:
                 boat.stop_motor()
-
+                print(math.degrees(theta))
                 telemetry.send({
                     "latitude": None,
                     "longitude": None,
@@ -288,7 +288,7 @@ def go_to_waypoint_gps(
                 imu.read_mag_raw()
             ).reshape(3, 1)
 
-            theta = ddboat.get_calibrated_heading(raw_mag)
+            theta = boat.get_calibrated_heading(raw_mag)
 
             # ------------------------------------------
             # 4. Distance et consignes moteurs
@@ -339,7 +339,7 @@ def go_to_waypoint_gps(
                 origin_lat,
                 origin_lon
             )
-
+            print(math.degrees(theta))
             telemetry.send({
                 "latitude": math.degrees(current_lat),
                 "longitude": math.degrees(current_lon),
