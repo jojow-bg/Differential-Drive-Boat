@@ -262,7 +262,7 @@ class GpsIO:
                     if len(vv[4]) > 0:
                         val[3] = vv[4]
                     if len(vv[5]) > 0:
-                        val[4] = float(vv[5])
+                        val[4] = vv[5] #float(vv[5])
                     msg=True
         return msg,val
 

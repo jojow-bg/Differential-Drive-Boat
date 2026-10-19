@@ -14,9 +14,9 @@ def main():
     ard = ArduinoIO()
     gps = GpsIO()
     imu = Imu9IO()
-    ddboat = ddboat(ard, imu, gps)
-    ddboat.back_to_base()
-    ddboat.stop_motor()
+    boat = ddboat(ard, imu, gps)
+    boat.back_to_base()
+    boat.stop_motor()
 
 
 if __name__ == "__main__":
