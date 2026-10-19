@@ -14,18 +14,15 @@ def main():
     ard = ArduinoIO()
     gps = GpsIO()
     imu = Imu9IO()
-
     ddboat = ddboat(ard, imu, gps)
 
+    while MISSION:
+        ddboat.update_position()
+        ddboat.update_heading()
 
-    # Commande de la mission
-    ddboat.control_motor(0, 100)
 
-    time.sleep(2)
+    ddboat.back_to_base()
 
-    ddboat.stop_motor()
-
-    
 
 if __name__ == "__main__":
     main()
