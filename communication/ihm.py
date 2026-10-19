@@ -10,6 +10,7 @@ import json
 import math
 import socket
 import time
+import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -25,8 +26,8 @@ SERVER_IP = "172.20.25.202"      # adresse IP du DDBoat
 SERVER_PORT = 5002
 
 # Même waypoint que dans nav_to_coords_gps (radians)
-TARGET_LAT = 0.845059
-TARGET_LON = -0.078067
+TARGET_LAT = np.deg2rad(48.198863)
+TARGET_LON = np.deg2rad(-3.016258)
 WAYPOINT_TOLERANCE = 2.0         # mètres
 
 PWM_MAX = 100

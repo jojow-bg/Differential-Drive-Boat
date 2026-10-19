@@ -12,9 +12,9 @@ dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
 import drivers.arduino_driver_v2 as arddrv
-from navigation.nav_to_coords_gps import nmea_to_radians
-from navigation.nav_to_coords_gps import latlong2local
-from calibration.magcalib import load_calibration_json
+#from navigation.nav_to_coords_gps import nmea_to_radians
+#from navigation.nav_to_coords_gps import latlong2local
+from calibration.calibration_utils import load_calibration_json
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
