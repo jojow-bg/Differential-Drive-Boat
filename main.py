@@ -5,7 +5,7 @@ import os
 from controller.ddboat import ddboat
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
-from drivers_old.imu9_driver_v2 import Imu9IO
+from drivers.imu9_driver_v2 import Imu9IO
 
 
 def main(): 
