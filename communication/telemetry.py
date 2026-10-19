@@ -6,7 +6,7 @@ import socket
 class TelemetryServer:
     """Envoie la télémétrie du DDBoat à un client TCP."""
 
-    def __init__(self, host="0.0.0.0", port=5001):
+    def __init__(self, host="0.0.0.0", port=5002):
         self.server = socket.socket(
             socket.AF_INET,
             socket.SOCK_STREAM

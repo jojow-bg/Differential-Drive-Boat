@@ -75,15 +75,15 @@ def load_calibration_json(filepath="mag_calib_params.json"):
 if __name__ == "__main__" :
     from scipy.linalg import sqrtm,inv,eig, norm
     
-    x1,x2,x3 = np.loadtxt('magcloud.csv', delimiter=',', unpack=True)
+    x1,x2,x3 = np.loadtxt('calibration/magcloud.csv', delimiter=',', unpack=True)
 
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x1,x2,x3,c="blue")
     plt.pause(0.1)
 
-    data_north = np.loadtxt('x_north.csv', delimiter=',')
-    data_west = np.loadtxt('x_west.csv', delimiter=',')
+    data_north = np.loadtxt('calibration/x_north.csv', delimiter=',')
+    data_west = np.loadtxt('calibration/x_west.csv', delimiter=',')
     xnorth = np.mean(data_north, axis=0).reshape(3, 1)
     xwest = np.mean(data_west, axis=0).reshape(3, 1)
 

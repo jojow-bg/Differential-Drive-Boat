@@ -25,5 +25,5 @@ def generate_data_with_ddboat(tmax, dt):
     generate_cloud_with_ddboat(tmax, dt)
 
 
-tmax, dt = 20, 1 / 20
+tmax, dt = 60, 1 / 20
 generate_data_with_ddboat(tmax, dt)

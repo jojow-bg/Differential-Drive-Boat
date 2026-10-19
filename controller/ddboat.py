@@ -40,6 +40,12 @@ class ddboat:
             lon_rad = nmea_to_radians(lon, dir_lon)
         return lat_rad, lon_rad
 
+    def get_calibrated_heading(raw_mag):
+        """Retourne le cap thêta du bateau à partir de la mesure brute."""
+        INV_A, X_BAR = load_calibration_json("../calibration/mag_calib_params.json")
+        y = INV_A @ (raw_mag - X_BAR)
+        return -math.atan2(y[1, 0], y[0, 0]) 
+
     def update_position(self, lat_origin, lon_origin):
         self.lat_rad, self.lon_rad = self.update_gps()
         self.x, self.y = latlong2local(self.lat_rad, self.lon_rad, lat_origin, lon_origin)

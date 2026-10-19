@@ -22,7 +22,7 @@ from matplotlib.patches import Circle
 # --------------------------------------------------
 
 SERVER_IP = "172.20.25.202"      # adresse IP du DDBoat
-SERVER_PORT = 5001
+SERVER_PORT = 5002
 
 # Même waypoint que dans nav_to_coords_gps (radians)
 TARGET_LAT = 0.845059

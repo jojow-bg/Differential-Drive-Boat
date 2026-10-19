@@ -30,8 +30,8 @@ LOOP_PERIOD = 0.1
 WAYPOINT_TOLERANCE = 2.0
 
 # Waypoint existant dans ton programme, en radians
-TARGET_LAT = 0.845059
-TARGET_LON = -0.078067
+TARGET_LAT = np.deg2rad(48.198863)
+TARGET_LON = np.deg2rad(-3.016258)
 
 # Fichier de trajectoire, dans le dossier du script
 TRAJECTORY_FILE = Path(__file__).resolve().parent / "trajectory.txt"
@@ -41,11 +41,6 @@ TRAJECTORY_FILE = Path(__file__).resolve().parent / "trajectory.txt"
 # CALCULS DE NAVIGATION
 # --------------------------------------------------
 
-def get_calibrated_heading(raw_mag):
-    """Retourne le cap thêta du bateau à partir de la mesure brute."""
-    
-    y = INV_A @ (raw_mag - X_BAR)
-    return -math.atan2(y[1, 0], y[0, 0]) 
 
 def sawtooth(alpha):
     """Ramène un angle dans [-pi, pi[."""
@@ -418,7 +413,7 @@ if __name__ == "__main__":
         # Le serveur attend le client sans bloquer la navigation
         telemetry = TelemetryServer(
             host="0.0.0.0",
-            port=5001
+            port=5002
         )
 
         go_to_waypoint_gps(
