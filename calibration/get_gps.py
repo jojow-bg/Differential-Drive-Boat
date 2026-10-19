@@ -1,3 +1,11 @@
+import os
+import sys
+
+# Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
+dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(dossier_parent)
+
+
 from controller.ddboat import ddboat
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
