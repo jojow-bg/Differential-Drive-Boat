@@ -9,7 +9,6 @@ sys.path.append(dossier_parent)
 
 import drivers.arduino_driver_v2 as arddrv
 from calibration.magcalib import load_calibration_json
-from controller.ddboat import control_motor
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
@@ -54,6 +53,6 @@ class ddboat:
 
     def get_calibrated_heading(raw_mag):
         """Retourne le cap thêta du bateau à partir de la mesure brute."""
-        INV_A, X_BAR = load_calibration_json("calibration/mag_calib_params.json")
+        INV_A, X_BAR = load_calibration_json("../calibration/mag_calib_params.json")
         y = INV_A @ (raw_mag - X_BAR)
         return -math.atan2(y[1, 0], y[0, 0]) 
