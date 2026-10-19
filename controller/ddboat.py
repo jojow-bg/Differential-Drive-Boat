@@ -116,6 +116,8 @@ class ddboat:
             
             self.update_heading()
             self.update_position()
+
+            
             current_pos =np.array([[self.x], [self.y]])
 
             #Attraction par ligne et par point A
