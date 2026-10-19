@@ -8,6 +8,7 @@ from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
 from controller.ddboat import ddboat
+from communication.ihm import save_trajectory, nmea_to_degrees
 
 
 R_EARTH = 6371000
@@ -104,6 +105,8 @@ def go_to_waypoint_gps(ddboat, target_lat, target_lon,tol=2.0):
 
     global lat, lon, n_try
     target_done = False 
+
+    positions=[]
     
     while not target_done:
 
@@ -119,6 +122,12 @@ def go_to_waypoint_gps(ddboat, target_lat, target_lon,tol=2.0):
             lat, dir_lat, lon, dir_lon = val
             lat_rad = nmea_to_radians(lat, dir_lat)
             lon_rad = nmea_to_radians(lon, dir_lon)
+
+            # Coordonnées conservées en degrés décimaux
+            latitude = math.degrees(lat_rad)
+            longitude = math.degrees(lon_rad)
+
+            positions.append((latitude, longitude))
 
         # On vérifie si on atteint la cible
         dist = get_distance_with_gps(lat_rad, lon_rad, target_lat, target_lon)
@@ -137,3 +146,5 @@ def go_to_waypoint_gps(ddboat, target_lat, target_lon,tol=2.0):
         ddboat.control_motor(cmd_left, cmd_right)
 
         time.sleep(0.01)
+
+    save_trajectory(positions)
