@@ -5,6 +5,7 @@ import os
 import numpy as np
 
 from exemples.drones_exo.ddboatlib import sawtooth
+import math
 
 # Ajoute le dossier parent (racine du projet) au chemin de recherche de Python
 dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -13,6 +14,12 @@ sys.path.append(dossier_parent)
 import drivers.arduino_driver_v2 as arddrv
 from navigation.nav_to_coords_gps import nmea_to_radians
 from navigation.nav_to_coords_gps import latlong2local
+from calibration.magcalib import load_calibration_json
+from controller.ddboat import control_motor
+from drivers.arduino_driver_v2 import ArduinoIO
+from drivers.gps_driver_v2 import GpsIO
+from drivers.imu9_driver_v2 import Imu9IO
+
 
 class ddboat:
 
@@ -61,9 +68,7 @@ class ddboat:
 
         # Envoi des vitesses aux propulseurs
         self.ard.send_arduino_cmd_motor(left_speed, right_speed) 
-        
-        # Maintien de la commande pendant 2 secondes
-        #time.sleep(2)
+    
 
     def compute_commands_TOR(error_theta,tol_deg = 5, PWM_MOTOR=120):
         if error_theta > np.deg2rad(tol_deg):
