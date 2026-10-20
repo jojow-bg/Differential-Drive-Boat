@@ -15,8 +15,12 @@ def main():
     gps = GpsIO()
     imu = Imu9IO()
     boat = ddboat(ard, imu, gps)
-    boat.back_to_base()
-    boat.stop_motor()
+
+    
+    IN_ZONE = boat.check_zone()
+    if not IN_ZONE:
+        boat.back_to_base()
+        boat.stop_motor()
 
 
 if __name__ == "__main__":

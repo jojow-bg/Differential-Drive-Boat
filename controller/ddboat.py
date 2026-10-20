@@ -33,6 +33,13 @@ class ddboat:
         self.lon_rad = None
         self.heading = None
         self.INV_A, self.X_BAR = load_calibration_json("calibration/mag_calib_params.json")
+        self.zone_limit = [
+    (48.198863, -3.015070),
+    (48.197408, -3.015060),  
+    (48.1970689, -3.017328), 
+    (48.199072, -3.016258), 
+    (48.199707, -3.016404), 
+    (48.199814, -3.015137)]
 
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
@@ -146,3 +153,24 @@ class ddboat:
             time.sleep(0.1)
 
         return True
+
+    def check_zone(self):
+        self.update_gps()
+        inside = False
+        n = len(self.zone_limit)
+
+        j = n - 1
+        for i in range(n):
+            lat_i, lon_i = self.zone_limit[i]
+            lat_j, lon_j = self.zone_limit[j]
+
+            if ((lon_i > self.lon_rad) != (lon_j > self.lon_rad)) and (
+                self.lat_rad < (lat_j - lat_i) * (self.lon_rad - lon_i) / (lon_j - lon_i) + lat_i
+            ):
+                inside = not inside
+            j = i
+
+        return inside
+        
+
+        
