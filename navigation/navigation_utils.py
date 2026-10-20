@@ -22,9 +22,9 @@ def nmea_to_radians(raw_coord, direction):
     return math.radians(decimal_degrees)
 
 
-def latlong2local(lat, lon, lat_origin, lon_origin):
+def latlong2local(lat, lon, lat_origin = np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
     """Convertit latitude/longitude en coordonnées locales (mètres)."""
-    x = R_EARTH * math.cos(lat_origin) * (lon - lon_origin)
+    x = -R_EARTH * math.cos(lat_origin) * (lon - lon_origin)
     y = R_EARTH * (lat - lat_origin)
 
     return x, y
@@ -46,3 +46,11 @@ def get_quadrant(theta):
         return 3
     else:
         return 4
+
+
+def get_bearing_xy(x1, y1, x2, y2):
+    """Cap désiré en radians, depuis le nord, sens horaire (comme get_bearing).
+    Repère local : x vers l'ouest, y vers le nord."""
+    d_east = -(x2 - x1)  # x vers l'ouest, donc l'est est -x
+    d_north = y2 - y1
+    return math.atan2(d_east, d_north)

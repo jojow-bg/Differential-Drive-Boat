@@ -41,7 +41,6 @@ def main():
 
         # Une seule séquence de retour
         boat.turn_around()
-        boat.back_to_base()
 
     finally:
         boat.back_to_base()

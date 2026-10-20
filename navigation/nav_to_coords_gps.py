@@ -13,7 +13,14 @@ dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
 from controller.ddboat import ddboat
-from navigation.navigation_utils import (sawtooth,nmea_to_radians)
+from navigation.navigation_utils import (
+    sawtooth,
+    nmea_to_radians,
+    latlong2local
+)
+
+local_coordinates = latlong2local
+
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
@@ -63,14 +70,6 @@ def get_bearing(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
 
     return math.atan2(y, x)
 
-def get_bearing_xy(x1, y1, x2, y2):
-    """Cap désiré en radians, depuis le nord, sens horaire (comme get_bearing).
-    Repère local : x vers l'ouest, y vers le nord."""
-    d_east = -(x2 - x1)  # x vers l'ouest, donc l'est est -x
-    d_north = y2 - y1
-    return math.atan2(d_east, d_north)
-
-
 def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     """Distance entre deux positions GPS, en mètres."""
 
@@ -89,11 +88,6 @@ def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R_EARTH * c
-
-def latlong2local(lat, lon, lat_origin, lon_origin):
-    x = R_EARTH * np.cos(lat_origin) * (lon - lon_origin)
-    y = R_EARTH * (lat - lat_origin)
-    return x, y
 
 
 def latlong2cart(lx,ly,ρ=R_EARTH): 
@@ -115,19 +109,6 @@ def nmea_to_radians(raw_coord, direction):
         decimal_degrees = -decimal_degrees
 
     return math.radians(decimal_degrees)
-
-
-def local_coordinates(lat, lon, origin_lat, origin_lon):
-    """
-    Convertit le GPS en coordonnées locales approximatives,
-    exprimées en mètres autour du point de départ.
-    """
-
-    x = R_EARTH * math.cos(origin_lat) * (lon - origin_lon)
-    y = R_EARTH * (lat - origin_lat)
-
-    return x, y
-
 
 # --------------------------------------------------
 # ENREGISTREMENT DE LA TRAJECTOIRE

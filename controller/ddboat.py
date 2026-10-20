@@ -15,7 +15,8 @@ from navigation.navigation_utils import (
     angle_difference,
     get_quadrant
 )
-from navigation.nav_to_coords_gps import get_bearing_xy
+
+from navigation.navigation_utils import get_bearing_xy
 from calibration.calibration_utils import load_calibration_json
 
 racine_projet = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -88,18 +89,18 @@ class ddboat:
         self.ard.send_arduino_cmd_motor(left_speed, right_speed) 
     
 
-    def compute_commands_TOR(self, error_theta,tol_deg = 5, PWM_MOTOR=120):
+    def compute_commands_TOR(self, error_theta, PWM_MOTOR=120,tol_deg = 5):
         if error_theta > np.deg2rad(tol_deg):
-            return 0,PWM_MOTOR
-        elif error_theta < np.deg2rad(-tol_deg):
             return PWM_MOTOR,0
+        elif error_theta < np.deg2rad(-tol_deg):
+            return 0,PWM_MOTOR
         else:
             return PWM_MOTOR, PWM_MOTOR
 
-    def follow_heading(self, target_heading, Kp=50.0):
+    def follow_heading(self, target_heading):
         self.update_heading()
         diff = target_heading - self.heading
-        e = math.atan2(math.sin(diff), math.cos(diff)) #si e>0, il on est a droite de l'objectif
+        e = math.atan2(math.sin(diff), math.cos(diff)) #si e>0, on est a gauche de l'objectif
         left_speed, right_speed = self.compute_commands_TOR(e)
         self.control_motor(left_speed, right_speed)
 
@@ -151,7 +152,7 @@ class ddboat:
             #Calcul de son cap
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
-            self.follow_heading(target_heading, Kp=1.0)
+            self.follow_heading(target_heading)
 
             time.sleep(0.1)
 
@@ -240,8 +241,8 @@ class ddboat:
     def pass_half_plan(self, start_point,stop_point,cartesian = False):
         self.update_position()
         if not cartesian:
-            x_start, y_start = latlong2local(start_point[0,0]), latlong2local(start_point[1,0])
-            x_stop, y_stop = latlong2local(stop_point[0,0]), latlong2local(stop_point[1,0])
+            x_start, y_start = latlong2local(start_point[0, 0], start_point[1, 0])
+            x_stop, y_stop = latlong2local(stop_point[0, 0], stop_point[1, 0])
         if cartesian:
             x_start, y_start = start_point[0,0], start_point[1,0]
             x_stop, y_stop = stop_point[0,0], stop_point[1,0]
@@ -272,4 +273,4 @@ class ddboat:
                 self.follow_heading(psi_d)
                 time.sleep(0.1)
             
-            self.stop_motor()
+        self.stop_motor()
