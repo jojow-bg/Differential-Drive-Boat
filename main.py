@@ -22,10 +22,12 @@ def main():
     telemetry = TelemetryServer()
 
     try:
-        
+        while boat.lat_rad == None:
+            boat.update_gps()
+            
         while not boat.check_zone():
             boat.control_motor(100,100)
-
+        
         result = go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat,target_lon,tol=5, abort_if_outside_zone=True)
 
         if result == False:
