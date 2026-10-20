@@ -179,7 +179,8 @@ def go_to_waypoint_gps(
     telemetry,
     target_lat,
     target_lon,
-    tol=WAYPOINT_TOLERANCE
+    tol=WAYPOINT_TOLERANCE,
+    abort_if_outside_zone=False
 ):
     """
     Navigue vers un waypoint et transmet les données à l'IHM.
@@ -231,8 +232,8 @@ def go_to_waypoint_gps(
 
                 # La première position fixe l'origine locale
                 if origin_lat is None:
-                    origin_lat = current_lat
-                    origin_lon = current_lon
+                    origin_lat = np.deg2rad(48.198863)
+                    origin_lon = np.deg2rad(-3.015070)
 
                     print("Origine GPS initialisée.")
 
@@ -249,6 +250,12 @@ def go_to_waypoint_gps(
                     math.degrees(current_lat),
                     math.degrees(current_lon)
                 ))
+
+            if abort_if_outside_zone and new_gps:
+                if not boat.check_zone():
+                    print("\nZone dépassée ! Retour à la base.")
+                    boat.stop_motor()
+                    return False
 
             # Lecture du cap IMU, même sans GPS
             raw_mag = np.array(
@@ -375,27 +382,8 @@ def go_to_waypoint_gps(
         return False
 
     finally:
-        # Arrêt demandé dans tous les cas
         boat.stop_motor()
-
-        # Sauvegarde aussi les données partielles en cas d'arrêt
         save_trajectory(positions)
-
-        try:
-            gps.close()
-        except Exception:
-            pass
-
-        try:
-            telemetry.close()
-        except Exception:
-            pass
-
-        try:
-            if ard.arduino is not None:
-                ard.arduino.close()
-        except Exception:
-            pass
 
 
 # --------------------------------------------------

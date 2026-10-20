@@ -11,24 +11,48 @@ from communication.telemetry import TelemetryServer
 from navigation.nav_to_coords_gps import go_to_waypoint_gps
 
 
-def main(): 
-    #point pour dépasser et back to base : 48.196500, -3.016900 (lat, long)
+def main():
+    target_lat = np.deg2rad(48.196500)
+    target_lon = np.deg2rad(-3.016900)
 
-    #Instanciation des objets et de la classe ddboat
     ard = ArduinoIO()
     gps = GpsIO()
     imu = Imu9IO()
     boat = ddboat(ard, imu, gps)
-
     telemetry = TelemetryServer()
-    target_lat = np.deg2rad(48.196500)
-    target_lon = np.deg2rad(-3.016900)
-    while True : 
-        go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5)
-        IN_ZONE = boat.check_zone()
-        if not IN_ZONE:
+
+    try:
+        result = go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat,target_lon,tol=5, abort_if_outside_zone=True)
+
+        if result == False:
+            print("Retour à la base en cours...")
             boat.back_to_base()
-            boat.stop_motor() 
+            print("Retour terminé.")
+
+        elif result is True:
+            print("Waypoint atteint.")
+
+        else:
+            print("Navigation interrompue.")
+
+    finally:
+        boat.stop_motor()
+
+        try:
+            gps.close()
+        except Exception:
+            pass
+
+        try:
+            telemetry.close()
+        except Exception:
+            pass
+
+        try:
+            if ard.arduino is not None:
+                ard.arduino.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
