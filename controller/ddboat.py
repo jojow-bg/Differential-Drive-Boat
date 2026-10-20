@@ -290,6 +290,7 @@ class ddboat:
 
                 # Bateau à gauche : on augmente le cap pour revenir vers la droite
                 psi_d = psi_segment + math.atan(e)
+                print(psi_d)
                 self.follow_heading(psi_d)
                 time.sleep(0.1)
             

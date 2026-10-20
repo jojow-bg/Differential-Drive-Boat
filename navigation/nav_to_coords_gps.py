@@ -161,9 +161,6 @@ def go_to_waypoint_gps(
     GPS valide, puis sauvegardée à la fin du programme.
     """
 
-    boat.lat_rad = None
-    boat.lon_rad = None
-
     origin_lat = np.deg2rad(48.198863)
     origin_lon = np.deg2rad(-3.015070)
 
@@ -182,7 +179,6 @@ def go_to_waypoint_gps(
             # 1. Lecture GPS
             # ------------------------------------------
             boat.update_gps()
-
             x, y = local_coordinates(
                 boat.lat_rad,
                 boat.lon_rad)

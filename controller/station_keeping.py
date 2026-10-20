@@ -50,7 +50,7 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
     try:
         # Rejoindre le waypoint initial
         reached = go_to_waypoint_gps(boat, gps, imu, telemetry, waypoint_lat, waypoint_lon)
-
+        print(reached)
         if not reached:
             print("Navigation interrompue. Station keeping annulé.")
             return False
@@ -60,12 +60,13 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
         # Surveillance continue
         while True:
             boat.update_position(lat_origin, lon_origin)
+            boat.update_gps()
 
             # Vérifier que la position GPS est disponible
             if boat.lat_rad is None or boat.lon_rad is None:
                 boat.stop_motor()
                 print("Position GPS indisponible.")
-                time.sleep(0.2)
+                time.sleep(0.5)
                 continue
 
             position_xy = (boat.x, boat.y)

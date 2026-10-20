@@ -12,8 +12,8 @@ from navigation.nav_to_coords_gps import go_to_waypoint_gps
 from controller.station_keeping import station
 
 def main():
-    target_lat = np.deg2rad(48.199628)
-    target_lon = np.deg2rad(-3.016379)
+    target_lat = np.deg2rad(48.198944)
+    target_lon = np.deg2rad(-3.015478)
     
     ard = ArduinoIO()
     gps = GpsIO()
@@ -35,9 +35,10 @@ def main():
     try:
         while (boat.lat_rad is None or boat.lon_rad is None):
             boat.update_gps()
-            time.sleep(2)
+            time.sleep(1)
 
         print("Connexion GPS réussi")
+        #go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5, abort_if_outside_zone=True)
         """    
         result = go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5, abort_if_outside_zone=True)
 
@@ -52,9 +53,10 @@ def main():
         target_lat_station = np.deg2rad(48.199027)
         target_lon_station = np.deg2rad(-3.015887)
         
-        station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=10)
+        station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
 
-        #visit_polygon(polygon)
+        #boat.visit_polygon(polygon)
+        
     finally:
         boat.turn_around()
         boat.back_to_base()
