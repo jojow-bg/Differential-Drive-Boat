@@ -13,7 +13,9 @@ import drivers.arduino_driver_v2 as arddrv
 from navigation.navigation_utils import (
     sawtooth,
     nmea_to_radians,
-    latlong2local
+    latlong2local,
+    get_quadrant,
+    angle_difference
 )
 from calibration.calibration_utils import load_calibration_json
 from drivers.arduino_driver_v2 import ArduinoIO
@@ -171,6 +173,65 @@ class ddboat:
             j = i
 
         return inside
-        
 
-        
+    def turn_around(self, speed=60, timeout=60.0):
+        target_angle = 2 * math.pi
+        self.update_heading()
+        theta_previous = self.heading
+        angle_turned = 0.0
+        rotation_sign = None
+
+        quadrants_visited = {get_quadrant(theta_previous)}
+        start_time = time.monotonic()
+
+        print("Début de la rotation.")
+
+        try:
+            # Rotation sur place : sens à vérifier sur le bateau
+            boat.control_motor(speed, -speed)
+
+            while time.monotonic() - start_time < timeout:
+                # Le magnétomètre fonctionne à environ 10 Hz
+                time.sleep(0.1)
+                self.update_heading()
+                theta = self.heading
+
+                # Variation réelle du cap, corrigée au passage de +/- pi
+                delta = angle_difference(theta, theta_previous)
+                theta_previous = theta
+
+                # Détermine le sens de rotation observé
+                if rotation_sign is None:
+                    if np.abs(delta) > math.radians(0.2):
+                        rotation_sign = 1 if delta > 0 else -1
+
+                # Cumule la rotation dans le sens initial observé
+                if rotation_sign is not None:
+                    angle_turned += rotation_sign * delta
+
+                # Enregistre les cadrans traversés
+                quadrants_visited.add(get_quadrant(theta))
+
+                print("\rRotation : {:.1f}° / 360° | Cadrans : {}".format(math.degrees(angle_turned), sorted(quadrants_visited)))
+
+                # Un tour complet a été mesuré
+                if angle_turned >= target_angle:
+                    print()
+
+                    if len(quadrants_visited) == 4:
+                        print("Tour complet validé : 360° et 4 cadrans parcourus.")
+                        return True
+
+                    print(
+                        "360° mesurés, mais les 4 cadrans n'ont pas tous "
+                        "été détectés. Vérifie la fréquence de lecture."
+                    )
+                    return False
+
+            print()
+            print("Échec : délai dépassé avant la validation du tour.")
+            return False
+
+        finally:
+            # Arrêt même en cas de timeout ou d'exception
+            self.stop_motor() 
