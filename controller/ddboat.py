@@ -159,7 +159,8 @@ class ddboat:
         return True
 
     def check_zone(self):
-        self.update_gps()
+        if (self.lat_rad == None):
+            return None        
         inside = False
         n = len(self.zone_limit)
 

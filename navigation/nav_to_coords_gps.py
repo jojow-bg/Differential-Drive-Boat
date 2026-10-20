@@ -42,7 +42,7 @@ TARGET_LAT = np.deg2rad(48.198863)
 TARGET_LON = np.deg2rad(-3.016258)
 
 # Fichier de trajectoire, dans le dossier du script
-TRAJECTORY_FILE = "../communication/trajectory.txt"
+TRAJECTORY_FILE = "communication/trajectory.txt"
 
 
 # --------------------------------------------------
@@ -178,6 +178,8 @@ def go_to_waypoint_gps(
         while True:
             loop_start = time.monotonic()
             new_gps = False
+            boat.lat_rad = current_lat
+            boat.lon_rad = current_lon
 
             # ------------------------------------------
             # 1. Lecture GPS
@@ -224,6 +226,7 @@ def go_to_waypoint_gps(
                 ))
 
             if abort_if_outside_zone and new_gps:
+                
                 if not boat.check_zone():
                     print("\nZone dépassée ! Retour à la base.")
                     boat.stop_motor()

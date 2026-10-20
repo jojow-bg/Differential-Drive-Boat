@@ -31,6 +31,7 @@ def main():
             tol=5,
             abort_if_outside_zone=True
         )
+        print(result)
 
         if result is False:
             print("Navigation interrompue : retour à la base.")
@@ -43,6 +44,7 @@ def main():
         boat.turn_around()
 
     finally:
+        boat.turn_around()
         boat.back_to_base()
         boat.stop_motor()
 
