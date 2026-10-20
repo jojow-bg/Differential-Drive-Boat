@@ -231,8 +231,8 @@ def go_to_waypoint_gps(
 
                 # La première position fixe l'origine locale
                 if origin_lat is None:
-                    origin_lat = current_lat
-                    origin_lon = current_lon
+                    origin_lat = np.deg2rad(48.198863)
+                    origin_lon = np.deg2rad(-3.015070)
 
                     print("Origine GPS initialisée.")
 

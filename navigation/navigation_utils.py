@@ -28,3 +28,15 @@ def latlong2local(lat, lon, lat_origin, lon_origin):
     y = R_EARTH * (lat - lat_origin)
 
     return x, y
+
+def pass_half_plan(start_point,stop_point,cartesian = False):
+    if not cartesian:
+        lat_start, lon_start = start_point[0,0], start_point[1,0]
+        lat_stop, lon_stop = stop_point[0,0], stop_point[1,0]
+        
+
+
+
+    if cartesian:
+        x_start, y_start = start_point[0,0], start_point[1,0]
+        x_stop, y_stop = stop_point[0,0], stop_point[1,0]
