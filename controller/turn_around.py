@@ -23,7 +23,7 @@ boat = ddboat(ard, imu, gps)
 def read_heading(imu):
     """Lit le cap calibré du bateau, en radians."""
     raw_mag = np.array(imu.read_mag_raw()).reshape(3, 1)
-    return ddboat.get_calibrated_heading(raw_mag)
+    return boat.get_calibrated_heading(raw_mag)
 
 
 def angle_difference(theta, previous_theta):
