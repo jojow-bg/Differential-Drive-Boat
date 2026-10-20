@@ -63,6 +63,13 @@ def get_bearing(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
 
     return math.atan2(y, x)
 
+def get_bearing_xy(x1, y1, x2, y2):
+    """Cap désiré en radians, depuis le nord, sens horaire (comme get_bearing).
+    Repère local : x vers l'ouest, y vers le nord."""
+    d_east = -(x2 - x1)  # x vers l'ouest, donc l'est est -x
+    d_north = y2 - y1
+    return math.atan2(d_east, d_north)
+
 
 def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
     """Distance entre deux positions GPS, en mètres."""
