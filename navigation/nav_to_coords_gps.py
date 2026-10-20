@@ -114,18 +114,6 @@ def nmea_to_radians(raw_coord, direction):
     return math.radians(decimal_degrees)
 
 
-def compute_commands_TOR(error_theta, pwm=PWM_MOTOR):
-    """Commandes moteurs selon l'erreur de cap."""
-
-    if error_theta > math.radians(10):
-        return 0, pwm
-
-    elif error_theta < -math.radians(10):
-        return pwm, 0
-
-    return pwm, pwm
-
-
 def local_coordinates(lat, lon, origin_lat, origin_lon):
     """
     Convertit le GPS en coordonnées locales approximatives,
@@ -325,7 +313,7 @@ def go_to_waypoint_gps(
                     desired_heading - theta
                 )
 
-                cmd_left, cmd_right = compute_commands_TOR(
+                cmd_left, cmd_right = boat.compute_commands_TOR(
                     error_theta,
                     PWM_MOTOR
                 )

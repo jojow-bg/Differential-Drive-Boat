@@ -56,7 +56,7 @@ class ddboat:
     def get_calibrated_heading(self, raw_mag):
         """Retourne le cap thêta du bateau à partir de la mesure brute."""
         y = self.INV_A @ (raw_mag - self.X_BAR)
-        return math.atan2(y[1, 0], y[0, 0]) 
+        return -math.atan2(y[1, 0], y[0, 0]) 
 
     def update_position(self, lat_origin= np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
         self.update_gps()
@@ -148,7 +148,7 @@ class ddboat:
             #Calcul du vecteur du champ
             target_vector = line_attraction_vector + point_attraction_vector
             #Calcul de son cap
-            target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
+            target_heading = np.arctan2(target_vector[0][0], target_vector[1][0])
 
             self.follow_heading(target_heading, Kp=1.0)
 

@@ -21,25 +21,27 @@ def main():
     telemetry = TelemetryServer()
 
     try:
-        while boat.lat_rad == None:
-            boat.update_gps()
-            
-        while not boat.check_zone():
-            boat.control_motor(100,100)
-        
-        result = go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat,target_lon,tol=5, abort_if_outside_zone=True)
+        result = go_to_waypoint_gps(
+            boat,
+            gps,
+            imu,
+            telemetry,
+            target_lat,
+            target_lon,
+            tol=5,
+            abort_if_outside_zone=True
+        )
 
-        if result == False:
-            print("Retour à la base en cours...")
-            boat.turn_around()
-            boat.back_to_base()
-            print("Retour terminé.")
-
+        if result is False:
+            print("Navigation interrompue : retour à la base.")
         elif result is True:
-            print("Waypoint atteint.")
-
+            print("Waypoint atteint : retour à la base.")
         else:
-            print("Navigation interrompue.")
+            print("Résultat de navigation inattendu.")
+
+        # Une seule séquence de retour
+        boat.turn_around()
+        boat.back_to_base()
 
     finally:
         boat.back_to_base()
