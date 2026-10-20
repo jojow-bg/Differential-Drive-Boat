@@ -209,7 +209,7 @@ style_inner(ax_map)
 ax_map.grid(True, color=GRID, linewidth=0.8)
 ax_map.set_axisbelow(True)
 ax_map.set_aspect("equal", adjustable="datalim")
-ax_map.set_xlim(-10, 10)
+ax_map.set_xlim(10, -10)
 ax_map.set_ylim(-10, 10)
 
 # Trajectoire : halo + trait dégradé (le plus récent est le plus vif)
@@ -328,8 +328,8 @@ def update_target_from(msg):
     if None in (lat, lon, x, y):
         return
     origin_lat = math.radians(lat) - y / R_EARTH
-    origin_lon = math.radians(lon) - x / (R_EARTH * math.cos(origin_lat))
-    tx = R_EARTH * math.cos(origin_lat) * (TARGET_LON - origin_lon)
+    origin_lon = math.radians(lon) + x / (R_EARTH * math.cos(origin_lat))
+    tx = -R_EARTH * math.cos(origin_lat) * (TARGET_LON - origin_lon)
     ty = R_EARTH * (TARGET_LAT - origin_lat)
     target_xy = (tx, ty)
 
@@ -345,7 +345,7 @@ def fit_view():
     cy = (min(py) + max(py)) / 2
     half = max(max(px) - min(px), max(py) - min(py)) / 2
     half = max(half * 1.25, 6.0)
-    ax_map.set_xlim(cx - half, cx + half)
+    ax_map.set_xlim(cx + half, cx - half)
     ax_map.set_ylim(cy - half, cy + half)
 
 
@@ -431,7 +431,7 @@ def update(_):
     # ---- Boussole ----
     bearing = None
     if x is not None and target_xy is not None and not reached:
-        bearing = math.atan2(target_xy[0] - x, target_xy[1] - y)
+        bearing = math.atan2(-target_xy[0] + x, target_xy[1] - y)
 
     if heading is not None:
         th = math.radians(heading)
