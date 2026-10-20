@@ -25,6 +25,10 @@ def main():
     target_lon = np.deg2rad(-3.016900)
     while True : 
         go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5)
+        IN_ZONE = boat.check_zone()
+        if not IN_ZONE:
+            boat.back_to_base()
+            boat.stop_motor() 
 
 
 if __name__ == "__main__":
