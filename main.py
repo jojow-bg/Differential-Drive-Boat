@@ -9,7 +9,6 @@ from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
 from communication.telemetry import TelemetryServer
 from navigation.nav_to_coords_gps import go_to_waypoint_gps
-from controller.turn_around import turn_around
 
 def main():
     target_lat = np.deg2rad(48.196500)
@@ -32,7 +31,7 @@ def main():
 
         if result == False:
             print("Retour à la base en cours...")
-            turn_around(boat, imu)
+            boat.turn_around()
             boat.back_to_base()
             print("Retour terminé.")
 
@@ -43,7 +42,6 @@ def main():
             print("Navigation interrompue.")
 
     finally:
-        turn_around(boat, imu)
         boat.back_to_base()
         boat.stop_motor()
 

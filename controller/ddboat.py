@@ -188,7 +188,7 @@ class ddboat:
 
         try:
             # Rotation sur place : sens à vérifier sur le bateau
-            boat.control_motor(speed, -speed)
+            self.control_motor(speed, -speed)
 
             while time.monotonic() - start_time < timeout:
                 # Le magnétomètre fonctionne à environ 10 Hz
