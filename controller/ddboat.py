@@ -38,7 +38,7 @@ class ddboat:
         self.heading = None
         self.INV_A, self.X_BAR = load_calibration_json(chemin_calibration)
         self.zone_limit = [
-            (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
+            (np.deg2rad(48.198960), np.deg2rad(-3.015091)),
             (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
             (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
             (np.deg2rad(48.199072), np.deg2rad(-3.016258)),  
@@ -60,7 +60,7 @@ class ddboat:
         y = self.INV_A @ (raw_mag - self.X_BAR)
         return math.atan2(y[1, 0], y[0, 0]) 
 
-    def update_position(self, lat_origin= np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
+    def update_position(self, lat_origin= np.deg2rad(48.198960), lon_origin = np.deg2rad(-3.015091)):
         self.update_gps()
         self.x, self.y = latlong2local(self.lat_rad, self.lon_rad, lat_origin, lon_origin)
 
@@ -136,8 +136,8 @@ class ddboat:
     
     def back_to_base(self):
 
-        lat_A = np.deg2rad(48.198863)
-        lon_A = np.deg2rad(-3.015070)
+        lat_A = np.deg2rad(48.198960)
+        lon_A = np.deg2rad(-3.015091)
         lat_B =np.deg2rad(48.199072)
         lon_B =np.deg2rad(-3.016258)
 

@@ -22,7 +22,7 @@ def main():
     telemetry = TelemetryServer()
 
     polygon = [
-    (np.deg2rad(48.198863), np.deg2rad(-3.015070)),  # A
+    (np.deg2rad(48.198960), np.deg2rad(-3.015091)),  # A
     (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
     (np.deg2rad(48.198124), np.deg2rad(-3.015355)),  # C
     (np.deg2rad(48.198259), np.deg2rad(-3.017114)),  # D
