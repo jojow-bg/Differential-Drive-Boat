@@ -33,14 +33,14 @@ class ddboat:
         self.lon_rad = None
         self.heading = None
         self.INV_A, self.X_BAR = load_calibration_json("calibration/mag_calib_params.json")
-        self.zone_limit = [
-    (48.198863, -3.015070),
-    (48.197408, -3.015060),  
-    (48.1970689, -3.017328), 
-    (48.199072, -3.016258), 
-    (48.199707, -3.016404), 
-    (48.199814, -3.015137)]
-
+        self.zone_limit =self.zone_limit = [
+    (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
+    (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
+    (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
+    (np.deg2rad(48.199072), np.deg2rad(-3.016258)),  
+    (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
+    (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
+]
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
         if msg and val[0]!=0:
