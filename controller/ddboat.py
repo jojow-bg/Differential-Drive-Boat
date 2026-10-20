@@ -97,6 +97,29 @@ class ddboat:
         else:
             return PWM_MOTOR, PWM_MOTOR
 
+    def compute_commands_diff(self, error_theta, PWM_MOTOR=120, Kp=80, PWM_MAX=191):
+        """Commande différentielle proportionnelle.
+        error_theta > 0 : bateau à gauche du cap cible, il faut tourner à droite."""
+        v = PWM_MOTOR * 2 * max(0.0, math.cos(error_theta))
+
+        # Correction de cap proportionnelle à l'erreur
+        u = Kp * error_theta
+
+        left = v + u
+        right = v - u
+
+        # Saturation haute en conservant l'écart entre les deux moteurs
+        overflow = max(left, right) - PWM_MAX
+        if overflow > 0:
+            left -= overflow
+            right -= overflow
+
+        # Pas de marche arrière
+        left = int(np.clip(left, 0, PWM_MAX))
+        right = int(np.clip(right, 0, PWM_MAX))
+        
+        return left, right
+
     def follow_heading(self, target_heading):
         self.update_heading()
         diff = target_heading - self.heading

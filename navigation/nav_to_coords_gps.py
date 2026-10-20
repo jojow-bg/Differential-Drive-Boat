@@ -32,7 +32,7 @@ from communication.telemetry import TelemetryServer
 # --------------------------------------------------
 
 R_EARTH = 6371000.0
-PWM_MOTOR = 100
+PWM_MOTOR = 160
 GPS_TIMEOUT = 0.01
 LOOP_PERIOD = 0.1
 WAYPOINT_TOLERANCE = 2.0
@@ -161,8 +161,8 @@ def go_to_waypoint_gps(
     GPS valide, puis sauvegardée à la fin du programme.
     """
 
-    current_lat = None
-    current_lon = None
+    boat.lat_rad = None
+    boat.lon_rad = None
 
     origin_lat = np.deg2rad(48.198863)
     origin_lon = np.deg2rad(-3.015070)
@@ -182,22 +182,16 @@ def go_to_waypoint_gps(
             # 1. Lecture GPS
             # ------------------------------------------
             boat.update_gps()
-            current_lat = boat.lat_rad
-            current_lon = boat.lon_rad
-            print(current_lon, current_lat)
+
             x, y = local_coordinates(
-                current_lat,
-                current_lon,
-                origin_lat,
-                origin_lon
-            )
-            print(math.degrees(current_lat), math.degrees(current_lon))
+                boat.lat_rad,
+                boat.lon_rad)
 
             positions.append((
                 x,
                 y,
-                math.degrees(current_lat),
-                math.degrees(current_lon)
+                math.degrees(boat.lat_rad),
+                math.degrees(boat.lon_rad)
             ))
 
             if abort_if_outside_zone and new_gps:
@@ -218,7 +212,7 @@ def go_to_waypoint_gps(
             # 2. Pas encore de position GPS
             # ------------------------------------------
 
-            if current_lat is None or current_lon is None:
+            if boat.lat_rad is None or boat.lon_rad is None:
                 boat.stop_motor()
                 print(math.degrees(theta))
                 telemetry.send({
@@ -252,8 +246,8 @@ def go_to_waypoint_gps(
             # ------------------------------------------
 
             distance = get_distance_with_gps(
-                current_lat,
-                current_lon,
+                boat.lat_rad,
+                boat.lon_rad,
                 target_lat,
                 target_lon
             )
@@ -265,8 +259,8 @@ def go_to_waypoint_gps(
 
             else:
                 desired_heading = get_bearing(
-                    current_lat,
-                    current_lon,
+                    boat.lat_rad,
+                    boat.lon_rad,
                     target_lat,
                     target_lon
                 )
@@ -291,15 +285,12 @@ def go_to_waypoint_gps(
             # ------------------------------------------
 
             x, y = local_coordinates(
-                current_lat,
-                current_lon,
-                origin_lat,
-                origin_lon
-            )
-            print(math.degrees(theta))
+                boat.lat_rad,
+                boat.lon_rad)
+            
             telemetry.send({
-                "latitude": math.degrees(current_lat),
-                "longitude": math.degrees(current_lon),
+                "latitude": math.degrees(boat.lat_rad),
+                "longitude": math.degrees(boat.lon_rad),
                 "x": x,
                 "y": y,
                 "heading_deg": math.degrees(theta),
