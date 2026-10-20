@@ -27,9 +27,7 @@ from drivers.imu9_driver_v2 import Imu9IO
 from communication.telemetry import TelemetryServer
 
 
-# --------------------------------------------------
 # CONFIGURATION
-# --------------------------------------------------
 
 R_EARTH = 6371000.0
 PWM_MOTOR = 160
@@ -45,9 +43,7 @@ TARGET_LON = np.deg2rad(-3.016258)
 TRAJECTORY_FILE = "communication/trajectory.txt"
 
 
-# --------------------------------------------------
 # CALCULS DE NAVIGATION
-# --------------------------------------------------
 
 
 def sawtooth(alpha):
@@ -110,9 +106,7 @@ def nmea_to_radians(raw_coord, direction):
 
     return math.radians(decimal_degrees)
 
-# --------------------------------------------------
 # ENREGISTREMENT DE LA TRAJECTOIRE
-# --------------------------------------------------
 
 def save_trajectory(positions, filename=TRAJECTORY_FILE):
     """
@@ -140,20 +134,9 @@ def save_trajectory(positions, filename=TRAJECTORY_FILE):
     print("Nombre de positions : {}".format(len(positions)))
 
 
-# --------------------------------------------------
 # NAVIGATION + TÉLÉMÉTRIE
-# --------------------------------------------------
 
-def go_to_waypoint_gps(
-    boat,
-    gps,
-    imu,
-    telemetry,
-    target_lat,
-    target_lon,
-    tol=WAYPOINT_TOLERANCE,
-    abort_if_outside_zone=False
-):
+def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WAYPOINT_TOLERANCE, abort_if_outside_zone=False, others = None):
     """
     Navigue vers un waypoint et transmet les données à l'IHM.
 
@@ -163,6 +146,8 @@ def go_to_waypoint_gps(
 
     origin_lat = np.deg2rad(48.198863)
     origin_lon = np.deg2rad(-3.015070)
+
+    goal_xy = local_coordinates(target_lat, target_lon)
 
     # Lignes : x, y, latitude en degrés, longitude en degrés
     positions = []
@@ -175,20 +160,13 @@ def go_to_waypoint_gps(
         while True:
             loop_start = time.monotonic()
             new_gps = False
-            # ------------------------------------------
+            
             # 1. Lecture GPS
-            # ------------------------------------------
+            
             boat.update_gps()
-            x, y = local_coordinates(
-                boat.lat_rad,
-                boat.lon_rad)
+            x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
 
-            positions.append((
-                x,
-                y,
-                math.degrees(boat.lat_rad),
-                math.degrees(boat.lon_rad)
-            ))
+            positions.append((x,y,math.degrees(boat.lat_rad),math.degrees(boat.lon_rad)))
 
             if abort_if_outside_zone and new_gps:
 
@@ -204,9 +182,9 @@ def go_to_waypoint_gps(
 
             theta = boat.get_calibrated_heading(raw_mag)
 
-            # ------------------------------------------
+            
             # 2. Pas encore de position GPS
-            # ------------------------------------------
+            
 
             if boat.lat_rad is None or boat.lon_rad is None:
                 boat.stop_motor()
@@ -221,68 +199,55 @@ def go_to_waypoint_gps(
                     "motor_right": 0,
                     "distance_m": None,
                     "new_gps": False,
-                    "target_reached": False
+                    "target_reached": False,
+                    "boats": others.as_telemetry() if others is not None else [],
+                    "avoiding" : avoiding
                 })
 
                 time.sleep(LOOP_PERIOD)
                 continue
 
-            # ------------------------------------------
+            
             # 3. Lecture du cap
-            # ------------------------------------------
+            
 
-            raw_mag = np.array(
-                imu.read_mag_raw()
-            ).reshape(3, 1)
+            raw_mag = np.array(imu.read_mag_raw()).reshape(3, 1)
 
             theta = boat.get_calibrated_heading(raw_mag)
 
-            # ------------------------------------------
+            
             # 4. Distance et consignes moteurs
-            # ------------------------------------------
+            
 
-            distance = get_distance_with_gps(
-                boat.lat_rad,
-                boat.lon_rad,
-                target_lat,
-                target_lon
-            )
+            distance = get_distance_with_gps(boat.lat_rad,boat.lon_rad,target_lat,target_lon)
 
             reached = distance < tol
+
+            avoiding = False
 
             if reached:
                 cmd_left, cmd_right = 0, 0
 
             else:
-                desired_heading = get_bearing(
-                    boat.lat_rad,
-                    boat.lon_rad,
-                    target_lat,
-                    target_lon
-                )
+                desired_heading = get_bearing(boat.lat_rad, boat.lon_rad, target_lat, target_lon)
 
-                error_theta = sawtooth(
-                    desired_heading - theta
-                )
+                if others is not None :
+                    h, info = field_heading((x,y), goal_xy, others.positions())
+                    if info["avoiding"]:
+                        desired_heading, avoiding = h, True
 
-                cmd_left, cmd_right = boat.compute_commands_TOR(
-                    error_theta,
-                    PWM_MOTOR
-                )
+                error_theta = sawtooth(desired_heading - theta)
 
-            # ------------------------------------------
-            # 5. Commande réelle des moteurs
-            # ------------------------------------------
+                cmd_left, cmd_right = boat.compute_commands_TOR(error_theta,PWM_MOTOR)
+
+            
+            # 5. Commande réelle des moteurs 
 
             boat.control_motor(cmd_left, cmd_right)
 
-            # ------------------------------------------
+            
             # 6. Envoi des données à l'IHM
-            # ------------------------------------------
-
-            x, y = local_coordinates(
-                boat.lat_rad,
-                boat.lon_rad)
+            x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
             
             telemetry.send({
                 "latitude": math.degrees(boat.lat_rad),
@@ -294,17 +259,16 @@ def go_to_waypoint_gps(
                 "motor_right": cmd_right,
                 "distance_m": distance,
                 "new_gps": new_gps,
-                "target_reached": reached
+                "target_reached": reached,
+                "boats": others.as_telemetry() if others is not None else [],
+                "avoiding" : avoiding
             })
 
-            print(
-                "\rDistance : {:.2f} m | Cap : {:.1f} deg | Moteurs : {}, {}".format(distance,math.degrees(theta), cmd_left, cmd_right)
-            )
+            print("\rDistance : {:.2f} m | Cap : {:.1f} deg | Moteurs : {}, {}".format(distance,math.degrees(theta), cmd_left, cmd_right))
 
-            # ------------------------------------------
             # 7. Fin de navigation
-            # ------------------------------------------
 
+            
             if reached:
                 print("\nWaypoint atteint.")
                 return True
@@ -323,9 +287,7 @@ def go_to_waypoint_gps(
         save_trajectory(positions)
 
 
-# --------------------------------------------------
 # POINT D'ENTRÉE
-# --------------------------------------------------
 
 if __name__ == "__main__":
     ard = None
