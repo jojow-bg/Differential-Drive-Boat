@@ -20,7 +20,18 @@ def main():
     imu = Imu9IO()
     boat = ddboat(ard, imu, gps)
     telemetry = TelemetryServer()
-   
+
+    polygon = [
+    (np.deg2rad(48.198863), np.deg2rad(-3.015070)),  # A
+    (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
+    (np.deg2rad(48.198124), np.deg2rad(-3.015355)),  # C
+    (np.deg2rad(48.198259), np.deg2rad(-3.017114)),  # D
+    (np.deg2rad(48.199027), np.deg2rad(-3.015887)),  # G'
+    (np.deg2rad(48.199628), np.deg2rad(-3.016379)),  # E
+    (np.deg2rad(48.199688), np.deg2rad(-3.015158)),  # F
+    (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
+]
+
     try:
         while (boat.lat_rad is None or boat.lon_rad is None):
             boat.update_gps()
@@ -43,6 +54,7 @@ def main():
         
         station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=10)
 
+        #visit_polygon(polygon)
     finally:
         boat.turn_around()
         boat.back_to_base()

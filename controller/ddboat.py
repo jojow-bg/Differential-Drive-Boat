@@ -37,7 +37,7 @@ class ddboat:
         self.lon_rad = None
         self.heading = None
         self.INV_A, self.X_BAR = load_calibration_json(chemin_calibration)
-        self.zone_limit =self.zone_limit = [
+        self.zone_limit = [
             (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
             (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
             (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
