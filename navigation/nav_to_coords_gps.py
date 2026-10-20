@@ -39,7 +39,7 @@ TARGET_LAT = np.deg2rad(48.198863)
 TARGET_LON = np.deg2rad(-3.016258)
 
 # Fichier de trajectoire, dans le dossier du script
-TRAJECTORY_FILE = Path(__file__).resolve().parent / "trajectory.txt"
+TRAJECTORY_FILE = "../communication/trajectory.txt"
 
 
 # --------------------------------------------------
