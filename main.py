@@ -19,8 +19,16 @@ def main():
     imu = Imu9IO()
     boat = ddboat(ard, imu, gps)
     telemetry = TelemetryServer()
+   
+
 
     try:
+        while (boat.lat_rad is None or boat.lon_rad is None):
+            boat.update_gps()
+            time.sleep(2)
+
+        print("Connexion GPS réussi")
+            
         result = go_to_waypoint_gps(
             boat,
             gps,

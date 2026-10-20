@@ -159,7 +159,7 @@ class ddboat:
         return True
 
     def check_zone(self):
-        if (self.lat_rad == None):
+        if (self.lat_rad is None or self.lon_rad is None):
             return None        
         inside = False
         n = len(self.zone_limit)
@@ -174,7 +174,6 @@ class ddboat:
             ):
                 inside = not inside
             j = i
-
         return inside
 
     def turn_around(self, speed=60, timeout=60.0):
@@ -206,11 +205,11 @@ class ddboat:
                 # Détermine le sens de rotation observé
                 if rotation_sign is None:
                     if np.abs(delta) > math.radians(0.2):
-                        rotation_sign = 1 if delta > 0 else -1
+                        rotation_sign = -1 if delta > 0 else 1
 
                 # Cumule la rotation dans le sens initial observé
                 if rotation_sign is not None:
-                    angle_turned += rotation_sign * delta
+                    angle_turned -= rotation_sign * delta
 
                 # Enregistre les cadrans traversés
                 quadrants_visited.add(get_quadrant(theta))
@@ -219,8 +218,6 @@ class ddboat:
 
                 # Un tour complet a été mesuré
                 if angle_turned >= target_angle:
-                    print()
-
                     if len(quadrants_visited) == 4:
                         print("Tour complet validé : 360° et 4 cadrans parcourus.")
                         return True
@@ -231,7 +228,6 @@ class ddboat:
                     )
                     return False
 
-            print()
             print("Échec : délai dépassé avant la validation du tour.")
             return False
 

@@ -164,8 +164,8 @@ def go_to_waypoint_gps(
     current_lat = None
     current_lon = None
 
-    origin_lat = None
-    origin_lon = None
+    origin_lat = np.deg2rad(48.198863)
+    origin_lon = np.deg2rad(-3.015070)
 
     # Lignes : x, y, latitude en degrés, longitude en degrés
     positions = []
@@ -178,55 +178,30 @@ def go_to_waypoint_gps(
         while True:
             loop_start = time.monotonic()
             new_gps = False
-            boat.lat_rad = current_lat
-            boat.lon_rad = current_lon
-
             # ------------------------------------------
             # 1. Lecture GPS
             # ------------------------------------------
-            msg, val = gps.read_gll_non_blocking(
-                timeout=GPS_TIMEOUT
+            boat.update_gps()
+            current_lat = boat.lat_rad
+            current_lon = boat.lon_rad
+            print(current_lon, current_lat)
+            x, y = local_coordinates(
+                current_lat,
+                current_lon,
+                origin_lat,
+                origin_lon
             )
+            print(math.degrees(current_lat), math.degrees(current_lon))
 
-            if (
-                msg
-                and val[0] > 0
-                and val[1] in ("N", "S")
-                and val[3] in ("E", "W")
-            ):
-                current_lat = nmea_to_radians(
-                    val[0], val[1]
-                )
-
-                current_lon = nmea_to_radians(
-                    val[2], val[3]
-                )
-
-                new_gps = True
-
-                # La première position fixe l'origine locale
-                if origin_lat is None:
-                    origin_lat = np.deg2rad(48.198863)
-                    origin_lon = np.deg2rad(-3.015070)
-
-                    print("Origine GPS initialisée.")
-
-                x, y = local_coordinates(
-                    current_lat,
-                    current_lon,
-                    origin_lat,
-                    origin_lon
-                )
-
-                positions.append((
-                    x,
-                    y,
-                    math.degrees(current_lat),
-                    math.degrees(current_lon)
-                ))
+            positions.append((
+                x,
+                y,
+                math.degrees(current_lat),
+                math.degrees(current_lon)
+            ))
 
             if abort_if_outside_zone and new_gps:
-                
+
                 if not boat.check_zone():
                     print("\nZone dépassée ! Retour à la base.")
                     boat.stop_motor()
