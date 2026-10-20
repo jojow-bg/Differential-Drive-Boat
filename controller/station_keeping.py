@@ -31,7 +31,7 @@ def in_circle(waypoint_xy, r_max, position_xy):
     distance_centre = np.sqrt((waypoint_xy[0] - position_xy[0])**2 + (waypoint_xy[1] - position_xy[1])**2)
     return distance_centre <= r_max
 
-def station(boat, waypoint, r_max):
+def station(boat, gps, imu, waypoint, r_max):
     """
     Station keeping :
     - Rejoint le waypoint initial.
@@ -54,7 +54,7 @@ def station(boat, waypoint, r_max):
     waypoint_xy = (waypoint_x, waypoint_y)
 
     try:
-        # 1. Rejoindre le waypoint initial
+        # Rejoindre le waypoint initial
         reached = go_to_waypoint_gps(boat, gps, imu, telemetry, waypoint_lat, waypoint_lon)
 
         if not reached:
@@ -63,7 +63,7 @@ def station(boat, waypoint, r_max):
 
         print("Waypoint atteint. Station keeping activé.")
 
-        # 2. Surveillance continue
+        # Surveillance continue
         while True:
             boat.update_position(lat_origin, lon_origin)
 
