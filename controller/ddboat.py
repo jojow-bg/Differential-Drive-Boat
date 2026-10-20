@@ -152,7 +152,7 @@ class ddboat:
             #Calcul de son cap
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
-            self.follow_heading(target_heading, Kp=1.0)
+            self.follow_heading(target_heading)
 
             time.sleep(0.1)
 

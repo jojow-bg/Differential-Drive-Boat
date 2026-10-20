@@ -18,6 +18,9 @@ from navigation.navigation_utils import (
     nmea_to_radians,
     latlong2local
 )
+
+local_coordinates = latlong2local
+
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
@@ -86,11 +89,6 @@ def get_distance_with_gps(lat1_rad, lon1_rad, lat2_rad, lon2_rad):
 
     return R_EARTH * c
 
-def latlong2local(lat, lon, lat_origin, lon_origin):
-    x = R_EARTH * np.cos(lat_origin) * (lon - lon_origin)
-    y = R_EARTH * (lat - lat_origin)
-    return x, y
-
 
 def latlong2cart(lx,ly,ρ=R_EARTH): 
     return ρ*np.array([[np.cos(ly)*np.cos(lx)],[np.cos(ly)*np.sin(lx)],[np.sin(ly)]])  
@@ -111,19 +109,6 @@ def nmea_to_radians(raw_coord, direction):
         decimal_degrees = -decimal_degrees
 
     return math.radians(decimal_degrees)
-
-
-def local_coordinates(lat, lon, origin_lat, origin_lon):
-    """
-    Convertit le GPS en coordonnées locales approximatives,
-    exprimées en mètres autour du point de départ.
-    """
-
-    x = R_EARTH * math.cos(origin_lat) * (lon - origin_lon)
-    y = R_EARTH * (lat - origin_lat)
-
-    return x, y
-
 
 # --------------------------------------------------
 # ENREGISTREMENT DE LA TRAJECTOIRE
