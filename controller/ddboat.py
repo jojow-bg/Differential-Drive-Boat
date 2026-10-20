@@ -9,20 +9,20 @@ import math
 dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
-import drivers.arduino_driver_v2 as arddrv
 from navigation.navigation_utils import (
-    sawtooth,
     nmea_to_radians,
     latlong2local,
-    get_quadrant,
-    angle_difference
+    angle_difference,
+    get_quadrant
 )
 
 from navigation.navigation_utils import get_bearing_xy
 from calibration.calibration_utils import load_calibration_json
-from drivers.arduino_driver_v2 import ArduinoIO
-from drivers.gps_driver_v2 import GpsIO
-from drivers.imu9_driver_v2 import Imu9IO
+
+racine_projet = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+chemin_calibration = os.path.join(racine_projet,"calibration","mag_calib_params.json")
+
 
 
 class ddboat:
@@ -36,15 +36,15 @@ class ddboat:
         self.lat_rad = None
         self.lon_rad = None
         self.heading = None
-        self.INV_A, self.X_BAR = load_calibration_json("calibration/mag_calib_params.json")
+        self.INV_A, self.X_BAR = load_calibration_json(chemin_calibration)
         self.zone_limit =self.zone_limit = [
-    (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
-    (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
-    (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
-    (np.deg2rad(48.199072), np.deg2rad(-3.016258)),  
-    (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
-    (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
-]
+            (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
+            (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
+            (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
+            (np.deg2rad(48.199072), np.deg2rad(-3.016258)),  
+            (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
+            (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
+        ]
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
         if msg and val[0]!=0:

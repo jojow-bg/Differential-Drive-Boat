@@ -13,7 +13,7 @@ from navigation.nav_to_coords_gps import go_to_waypoint_gps
 def main():
     target_lat = np.deg2rad(48.196500)
     target_lon = np.deg2rad(-3.016900)
-
+    
     ard = ArduinoIO()
     gps = GpsIO()
     imu = Imu9IO()
