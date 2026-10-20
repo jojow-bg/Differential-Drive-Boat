@@ -41,7 +41,7 @@ def main():
         target_lat_station = np.deg2rad(48.199027)
         target_lon_station = np.deg2rad(-3.015887)
         
-        station(boat, gps, imu, (target_lat_station, target_lon_station), r_max=10)
+        station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=10)
 
     finally:
         boat.turn_around()

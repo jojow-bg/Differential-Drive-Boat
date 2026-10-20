@@ -21,17 +21,11 @@ from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
 from communication.telemetry import TelemetryServer
 
-gps = GpsIO()
-imu = Imu9IO()
-ard = ArduinoIO()
-boat = ddboat(ard, imu, gps)
-telemetry = TelemetryServer()
-
 def in_circle(waypoint_xy, r_max, position_xy):
     distance_centre = np.sqrt((waypoint_xy[0] - position_xy[0])**2 + (waypoint_xy[1] - position_xy[1])**2)
     return distance_centre <= r_max
 
-def station(boat, gps, imu, waypoint, r_max):
+def station(boat, gps, imu, telemetry, waypoint, r_max):
     """
     Station keeping :
     - Rejoint le waypoint initial.
@@ -80,7 +74,7 @@ def station(boat, gps, imu, waypoint, r_max):
             if not in_circle(waypoint_xy, r_max, position_xy):
                 print("Cercle dépassé : retour au waypoint.")
 
-                reached = go_to_waypoint_gps( boat,gps,imu, telemetry, waypoint_lat, waypoint_lon)
+                reached = go_to_waypoint_gps(boat,gps,imu, telemetry, waypoint_lat, waypoint_lon)
 
                 if not reached:
                     print("Retour interrompu.")
@@ -101,5 +95,3 @@ def station(boat, gps, imu, waypoint, r_max):
 if __name__ == "__main__" :
     waypoint = (np.deg2rad(48.198863), np.deg2rad(-3.015070))
     #point A
-
-    station(boat, waypoint, r_max=3.0)
