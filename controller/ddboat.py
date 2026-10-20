@@ -17,6 +17,8 @@ from navigation.navigation_utils import (
     get_quadrant,
     angle_difference
 )
+
+from navigation.nav_to_coords_gps import get_bearing_xy
 from calibration.calibration_utils import load_calibration_json
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
@@ -249,4 +251,26 @@ class ddboat:
             return True
 
     def visit_polygon(self, polygon):
-        
+        pts = [np.array(latlong2local(lat, lon), dtype=float).reshape(2, 1) for lat, lon in polygon]
+        pts = pts + [pts[0]]
+        for k in range(len(pts) - 1):
+
+            start_point, stop_point = pts[k], pts[k + 1]
+            psi_segment = get_bearing_xy(start_point[0,0], start_point[1,0], stop_point[0,0], stop_point[1,0])
+            vec_ab = (stop_point - start_point).flatten()
+            norm_ab = np.linalg.norm(vec_ab)
+
+
+            while not self.pass_half_plan(start_point, stop_point, cartesian=True):
+                vec_am = np.array([self.x - start_point[0, 0],self.y - start_point[1, 0]])
+                det_2d = vec_ab[0] * vec_am[1] - vec_ab[1] * vec_am[0]
+
+                # - pour avoir e > 0 quand le bateau est à gauche de AB
+                e = -det_2d / norm_ab
+
+                # Bateau à gauche : on augmente le cap pour revenir vers la droite
+                psi_d = psi_segment + math.atan(e)
+                self.follow_heading(psi_d)
+                time.sleep(0.1)
+            
+            self.stop_motor()
