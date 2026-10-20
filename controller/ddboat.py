@@ -56,7 +56,7 @@ class ddboat:
     def get_calibrated_heading(self, raw_mag):
         """Retourne le cap thêta du bateau à partir de la mesure brute."""
         y = self.INV_A @ (raw_mag - self.X_BAR)
-        return -math.atan2(y[1, 0], y[0, 0]) 
+        return math.atan2(y[1, 0], y[0, 0]) 
 
     def update_position(self, lat_origin= np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
         self.update_gps()
@@ -148,7 +148,7 @@ class ddboat:
             #Calcul du vecteur du champ
             target_vector = line_attraction_vector + point_attraction_vector
             #Calcul de son cap
-            target_heading = np.arctan2(target_vector[0][0], target_vector[1][0])
+            target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
             self.follow_heading(target_heading, Kp=1.0)
 
@@ -235,3 +235,18 @@ class ddboat:
         finally:
             # Arrêt même en cas de timeout ou d'exception
             self.stop_motor() 
+
+    def pass_half_plan(self, start_point,stop_point,cartesian = False):
+        self.update_position()
+        if not cartesian:
+            x_start, y_start = latlong2local(start_point[0,0]), latlong2local(start_point[1,0])
+            x_stop, y_stop = latlong2local(stop_point[0,0]), latlong2local(stop_point[1,0])
+        if cartesian:
+            x_start, y_start = start_point[0,0], start_point[1,0]
+            x_stop, y_stop = stop_point[0,0], stop_point[1,0]
+
+        if (x_stop-x_start)*(self.x-x_stop) + (y_stop-y_start) * (self.y-y_stop) > 0 :
+            return True
+
+    def visit_polygon(self, polygon):
+        

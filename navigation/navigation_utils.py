@@ -29,14 +29,20 @@ def latlong2local(lat, lon, lat_origin, lon_origin):
 
     return x, y
 
-def pass_half_plan(start_point,stop_point,cartesian = False):
-    if not cartesian:
-        lat_start, lon_start = start_point[0,0], start_point[1,0]
-        lat_stop, lon_stop = stop_point[0,0], stop_point[1,0]
-        
+def angle_difference(theta, previous_theta):
+    """Variation angulaire comprise entre -pi et pi."""
+    return (theta - previous_theta + math.pi) % (2 * math.pi) - math.pi
 
 
+def get_quadrant(theta):
+    """Retourne le cadran trigonométrique, de 1 à 4."""
+    angle = theta % (2 * math.pi)
 
-    if cartesian:
-        x_start, y_start = start_point[0,0], start_point[1,0]
-        x_stop, y_stop = stop_point[0,0], stop_point[1,0]
+    if angle < math.pi / 2:
+        return 1
+    elif angle < math.pi:
+        return 2
+    elif angle < 3 * math.pi / 2:
+        return 3
+    else:
+        return 4
