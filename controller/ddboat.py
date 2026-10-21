@@ -257,6 +257,7 @@ class ddboat:
             point_attraction_vector = -2*(current_pos-A)
             #Calcul du vecteur du champ
             target_vector = line_attraction_vector + point_attraction_vector
+            target_vector = target_vector / max(np.linalg.norm(target_vector), 1e-6)
 
             if boat_rejection and np.linalg.norm(current_pos-A) > 10:
                 boats = self.update_fleet()
