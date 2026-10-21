@@ -230,7 +230,7 @@ class ddboat:
 
             self.follow_heading(target_heading, meth="DIFF")
 
-            time.sleep(0.2)
+            time.sleep(0.01)
 
         return True
 
