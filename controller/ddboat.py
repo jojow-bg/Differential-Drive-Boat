@@ -49,7 +49,7 @@ class ddboat:
 
         self.fleet = FleetManager(
                 boat_id=2,
-                server_ip="IP_DU_SERVEUR_CENTRAL",
+                server_ip="172.20.26.111",
                 server_port=6800
             )
 
