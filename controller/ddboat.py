@@ -218,7 +218,7 @@ class ddboat:
         print("Propulseurs arretes.")
 
     
-    def back_to_base(self):
+    def back_to_base(self, boat_rejection = True):
 
         lat_A = np.deg2rad(48.198858)
         lon_A = np.deg2rad(-3.014986)
@@ -260,7 +260,14 @@ class ddboat:
             #Calcul de son cap
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
-            self.follow_heading(target_heading)
+            if boat_rejection:
+                boats = self.update_fleet()
+                target_vector = target_vector + self.compute_field(boats)
+            
+            target_heading = np.arctan2(-target_vector[0, 0], target_vector[1, 0])
+            
+            
+            self.follow_heading(target_heading, meth="DIFF")
             self.send_telemetry(
                 distance_m=None,
                 target_reached=False,
