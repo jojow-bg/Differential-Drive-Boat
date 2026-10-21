@@ -319,7 +319,7 @@ class ddboat:
         if (x_stop-x_start)*(self.x-x_stop) + (y_stop-y_start) * (self.y-y_stop) > 0 :
             return True
 
-    def visit_polygon(self, polygon, telemetry):
+    def visit_polygon(self, polygon):
         
         pts = [np.array(latlong2local(lat, lon), dtype=float).reshape(2, 1) for lat, lon in polygon]
         pts = pts + [pts[0]]
@@ -350,7 +350,7 @@ class ddboat:
                 distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
                 reached = False 
                 if counter % 5 ==0 :
-                    telemetry.send({
+                    self.send_telemetry({
                                     "latitude": math.degrees(self.lat_rad),
                                     "longitude": math.degrees(self.lon_rad),
                                     "x": self.x,
