@@ -56,7 +56,7 @@ def main():
         #boat.visit_polygon(polygon)
         
     finally:
-        boat.turn_around()
+        #boat.turn_around()
         boat.back_to_base()
         boat.stop_motor()
 
