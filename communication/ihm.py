@@ -70,10 +70,7 @@ OLD_ZONE_LIMIT = [
 # Waypoints : (nom, latitude°, longitude°, tolérance m, cible de navigation ?)
 #   cible=True  : waypoint que le bateau rallie (étoile + cercle)
 #   cible=False : point de repère de la zone (losange)
-WAYPOINTS = [
-    ("WP1", 48.198863, -3.016258, 2.0, True),    
-    ("WP2", 48.196500, -3.016900, 5.0, True),  
-] + [(n, la, lo, 2.0, False) for n, la, lo in ZONE_POINTS]
+WAYPOINTS = [] + [(n, la, lo, 2.0, False) for n, la, lo in ZONE_POINTS]
 
 PWM_MAX = 100
 R_EARTH = 6371000.0
@@ -564,6 +561,7 @@ def update_others(boats):
             continue
         bid = str(b.get("id") or b.get("name") or "?")
         o = others.get(bid)
+        age = max(0.0, float(b.get("age", 0.0)))
         if o is None:
             ln, = ax_map.plot([], [], marker=(3, 0, 0), color=VIOLET, ms=14,
                               mec=BG, mew=1, ls="None", zorder=6)
@@ -571,7 +569,7 @@ def update_others(boats):
                                   textcoords="offset points", color=TEXT,
                                   fontsize=9, fontweight="bold", zorder=6)
             o = others[bid] = {"ln": ln, "lbl": lbl}
-        o.update(x=pos[0], y=pos[1], heading=b.get("heading_deg"), seen=now)
+        o.update(x=pos[0], y=pos[1], heading=b.get("heading_deg"), seen=now - age)
 
 
 TARGET_IDX = [i for i, w in enumerate(WAYPOINTS) if w[4]] or [0]

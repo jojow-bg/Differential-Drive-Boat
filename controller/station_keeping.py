@@ -80,11 +80,6 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
 
             time.sleep(0.2)
 
-    except KeyboardInterrupt:
-        print("\nStation keeping interrompu.")
-
-        return False
-
     finally:
         boat.stop_motor()
 
