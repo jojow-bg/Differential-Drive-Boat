@@ -93,7 +93,7 @@ class ddboat:
         if error_theta > np.deg2rad(tol_deg):
             return PWM_MOTOR,0
         elif error_theta < np.deg2rad(-tol_deg):
-            return 0,PWM_MOTOR
+            return -PWM_MOTOR,PWM_MOTOR
         else:
             return PWM_MOTOR, PWM_MOTOR
 
@@ -204,7 +204,7 @@ class ddboat:
         self.update_heading()
         theta_previous = self.heading
         angle_turned = 0.0
-        rotation_sign = None
+        rotation_sign = +1
 
         quadrants_visited = {get_quadrant(theta_previous)}
         start_time = time.monotonic()
@@ -225,14 +225,10 @@ class ddboat:
                 delta = angle_difference(theta, theta_previous)
                 theta_previous = theta
 
-                # Détermine le sens de rotation observé
-                if rotation_sign is None:
-                    if np.abs(delta) > math.radians(0.2):
-                        rotation_sign = -1 if delta > 0 else 1
 
                 # Cumule la rotation dans le sens initial observé
                 if rotation_sign is not None:
-                    angle_turned -= rotation_sign * delta
+                    angle_turned += rotation_sign * delta
 
                 # Enregistre les cadrans traversés
                 quadrants_visited.add(get_quadrant(theta))
@@ -240,7 +236,7 @@ class ddboat:
                 print("\rRotation : {:.1f}° / 360° | Cadrans : {}".format(math.degrees(angle_turned), sorted(quadrants_visited)))
 
                 # Un tour complet a été mesuré
-                if angle_turned >= target_angle:
+                if angle_turned >= target_angle or angle_turned <= -math.degrees(360):
                     if len(quadrants_visited) == 4:
                         print("Tour complet validé : 360° et 4 cadrans parcourus.")
                         return True

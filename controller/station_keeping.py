@@ -61,6 +61,7 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
         while True:
             boat.update_position(lat_origin, lon_origin)
             boat.update_gps()
+            print("prout update")
 
             # Vérifier que la position GPS est disponible
             if boat.lat_rad is None or boat.lon_rad is None:
@@ -68,9 +69,9 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
                 print("Position GPS indisponible.")
                 time.sleep(0.5)
                 continue
-
+            
             position_xy = (boat.x, boat.y)
-
+            print("prout verif circle")
             # 3. Vérifier si le bateau est dans le cercle
             if not in_circle(waypoint_xy, r_max, position_xy):
                 print("Cercle dépassé : retour au waypoint.")
