@@ -37,6 +37,8 @@ class ddboat:
         self.lat_rad = None
         self.lon_rad = None
         self.heading = None
+        self.motor_left = 0
+        self.motor_right = 0
         self.INV_A, self.X_BAR = load_calibration_json(chemin_calibration)
         self.zone_limit = [
             (np.deg2rad(48.198960), np.deg2rad(-3.015091)),
@@ -226,7 +228,7 @@ class ddboat:
             #Calcul de son cap
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
-            self.follow_heading(target_heading)
+            self.follow_heading(target_heading, meth="DIFF")
 
             time.sleep(0.2)
 
@@ -349,18 +351,7 @@ class ddboat:
                 distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
                 reached = False 
                 if counter % 5 ==0 :
-                    self.send_telemetry({
-                                    "latitude": math.degrees(self.lat_rad),
-                                    "longitude": math.degrees(self.lon_rad),
-                                    "x": self.x,
-                                    "y": self.y,
-                                    "heading_deg": math.degrees(self.heading),
-                                    "motor_left": cmd_left,
-                                    "motor_right": cmd_right,
-                                    "distance_m": distance,
-                                    "new_gps": True,
-                                    "target_reached": reached
-                                })
+                    self.send_telemetry(distance, new_gps=True)
                 time.sleep(0.1)
                 counter+=1
             
