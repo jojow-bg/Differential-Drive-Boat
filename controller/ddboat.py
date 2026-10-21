@@ -120,12 +120,17 @@ class ddboat:
         
         return left, right
 
-    def follow_heading(self, target_heading):
+    def follow_heading(self, target_heading, meth="TOR"):
         self.update_heading()
         diff = target_heading - self.heading
         e = math.atan2(math.sin(diff), math.cos(diff)) #si e>0, on est a gauche de l'objectif
-        left_speed, right_speed = self.compute_commands_TOR(e)
+        if meth=="DIFF":
+            left_speed, right_speed = self.compute_commands_diff(e)
+        else:
+            left_speed, right_speed = self.compute_commands_TOR(e)
+
         self.control_motor(left_speed, right_speed)
+        return [left_speed, right_speed]
 
 
     def stop_motor(self):
@@ -161,7 +166,8 @@ class ddboat:
         current_pos =np.array([[self.x], [self.y]])
 
         while np.linalg.norm(current_pos-A) > 3: 
-            
+            print("distance au point A = ", np.linalg.norm(current_pos-A))
+
             self.update_heading()
             self.update_position(lat_origin, lon_origin)
 
@@ -177,7 +183,7 @@ class ddboat:
 
             self.follow_heading(target_heading)
 
-            time.sleep(0.1)
+            time.sleep(0.2)
 
         return True
 
@@ -266,7 +272,8 @@ class ddboat:
         if (x_stop-x_start)*(self.x-x_stop) + (y_stop-y_start) * (self.y-y_stop) > 0 :
             return True
 
-    def visit_polygon(self, polygon):
+    def visit_polygon(self, polygon, telemetry):
+        
         pts = [np.array(latlong2local(lat, lon), dtype=float).reshape(2, 1) for lat, lon in polygon]
         pts = pts + [pts[0]]
         for k in range(len(pts) - 1):
@@ -276,7 +283,7 @@ class ddboat:
             vec_ab = (stop_point - start_point).flatten()
             norm_ab = np.linalg.norm(vec_ab)
 
-
+            counter = 0
             while not self.pass_half_plan(start_point, stop_point, cartesian=True):
                 vec_am = np.array([self.x - start_point[0, 0],self.y - start_point[1, 0]])
                 det_2d = vec_ab[0] * vec_am[1] - vec_ab[1] * vec_am[0]
@@ -285,9 +292,30 @@ class ddboat:
                 e = -det_2d / norm_ab
 
                 # Bateau à gauche : on augmente le cap pour revenir vers la droite
-                psi_d = psi_segment + math.atan(e)
-                print(psi_d)
-                self.follow_heading(psi_d)
+                psi_d = psi_segment + math.atan(e/8)
+                cmd = self.follow_heading(psi_d, "DIFF")
+                cmd_left, cmd_right = cmd[0], cmd[1]
+
+                self.update_gps()
+                self.update_position()
+                self.update_heading()
+
+                distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
+                reached = False 
+                if counter % 5 ==0 :
+                    telemetry.send({
+                                    "latitude": math.degrees(self.lat_rad),
+                                    "longitude": math.degrees(self.lon_rad),
+                                    "x": self.x,
+                                    "y": self.y,
+                                    "heading_deg": math.degrees(self.heading),
+                                    "motor_left": cmd_left,
+                                    "motor_right": cmd_right,
+                                    "distance_m": distance,
+                                    "new_gps": True,
+                                    "target_reached": reached
+                                })
                 time.sleep(0.1)
+                counter+=1
             
         self.stop_motor()
