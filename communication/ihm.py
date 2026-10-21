@@ -41,13 +41,13 @@ SERVER_PORT = 5002
 MY_NAME = "DDBoat02"             # nom affiché pour ce bateau
 
 # Origine du repère local du bateau (= "Base", comme dans ddboat.py)
-ORIGIN_LAT, ORIGIN_LON = 48.198863, -3.015070
+ORIGIN_LAT, ORIGIN_LON = 48.198858, -3.014986
 
 # Zone de navigation (le "polygon" : A, G, C, D, G', E, F), en degrés.
 # Le G final en double a été retiré. Mettre la même liste dans
 # ddboat.zone_limit pour que le bateau et l'IHM aient la même zone.
 ZONE_POINTS = [
-    ("A",  48.198863, -3.015070),
+    ("A",  48.198858, -3.014986),
     ("G",  48.198944, -3.015478),
     ("C",  48.198124, -3.015355),
     ("D",  48.198259, -3.017114),
@@ -70,10 +70,7 @@ OLD_ZONE_LIMIT = [
 # Waypoints : (nom, latitude°, longitude°, tolérance m, cible de navigation ?)
 #   cible=True  : waypoint que le bateau rallie (étoile + cercle)
 #   cible=False : point de repère de la zone (losange)
-WAYPOINTS = [
-    ("WP1", 48.198863, -3.016258, 2.0, True),    
-    ("WP2", 48.196500, -3.016900, 5.0, True),  
-] + [(n, la, lo, 2.0, False) for n, la, lo in ZONE_POINTS]
+WAYPOINTS = [] + [(n, la, lo, 2.0, False) for n, la, lo in ZONE_POINTS]
 
 PWM_MAX = 100
 R_EARTH = 6371000.0
@@ -564,6 +561,7 @@ def update_others(boats):
             continue
         bid = str(b.get("id") or b.get("name") or "?")
         o = others.get(bid)
+        age = max(0.0, float(b.get("age", 0.0)))
         if o is None:
             ln, = ax_map.plot([], [], marker=(3, 0, 0), color=VIOLET, ms=14,
                               mec=BG, mew=1, ls="None", zorder=6)
@@ -571,7 +569,7 @@ def update_others(boats):
                                   textcoords="offset points", color=TEXT,
                                   fontsize=9, fontweight="bold", zorder=6)
             o = others[bid] = {"ln": ln, "lbl": lbl}
-        o.update(x=pos[0], y=pos[1], heading=b.get("heading_deg"), seen=now)
+        o.update(x=pos[0], y=pos[1], heading=b.get("heading_deg"), seen=now - age)
 
 
 TARGET_IDX = [i for i, w in enumerate(WAYPOINTS) if w[4]] or [0]

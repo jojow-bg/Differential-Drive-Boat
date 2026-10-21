@@ -22,7 +22,7 @@ def nmea_to_radians(raw_coord, direction):
     return math.radians(decimal_degrees)
 
 
-def latlong2local(lat, lon, lat_origin = np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
+def latlong2local(lat, lon, lat_origin = np.deg2rad(48.198858), lon_origin = np.deg2rad(-3.014986)):
     """Convertit latitude/longitude en coordonnées locales (mètres)."""
     x = -R_EARTH * math.cos(lat_origin) * (lon - lon_origin)
     y = R_EARTH * (lat - lat_origin)

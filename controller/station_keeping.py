@@ -15,12 +15,6 @@ from navigation.navigation_utils import (
 )
 from navigation.nav_to_coords_gps import go_to_waypoint_gps
 
-from controller.ddboat import ddboat
-from drivers.arduino_driver_v2 import ArduinoIO
-from drivers.gps_driver_v2 import GpsIO
-from drivers.imu9_driver_v2 import Imu9IO
-from communication.telemetry import TelemetryServer
-
 def in_circle(waypoint_xy, r_max, position_xy):
     distance_centre = np.sqrt((waypoint_xy[0] - position_xy[0])**2 + (waypoint_xy[1] - position_xy[1])**2)
     return distance_centre <= r_max
@@ -39,8 +33,8 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
     waypoint_lat, waypoint_lon = waypoint
 
     # Origine du repère local, identique à celle de update_position()
-    lat_origin = np.deg2rad(48.198863)
-    lon_origin = np.deg2rad(-3.015070)
+    lat_origin = np.deg2rad(48.198858)
+    lon_origin = np.deg2rad(-3.014986)
 
     # Coordonnées locales du waypoint
     waypoint_x, waypoint_y = latlong2local(waypoint_lat, waypoint_lon, lat_origin, lon_origin)
@@ -61,6 +55,7 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
         while True:
             boat.update_position(lat_origin, lon_origin)
             boat.update_gps()
+            print("prout update")
 
             # Vérifier que la position GPS est disponible
             if boat.lat_rad is None or boat.lon_rad is None:
@@ -68,9 +63,9 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
                 print("Position GPS indisponible.")
                 time.sleep(0.5)
                 continue
-
+            
             position_xy = (boat.x, boat.y)
-
+            print("prout verif circle")
             # 3. Vérifier si le bateau est dans le cercle
             if not in_circle(waypoint_xy, r_max, position_xy):
                 print("Cercle dépassé : retour au waypoint.")
@@ -84,11 +79,6 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
                 print("Waypoint rejoint. Reprise de la surveillance.")
 
             time.sleep(0.2)
-
-    except KeyboardInterrupt:
-        print("\nStation keeping interrompu.")
-
-        return False
 
     finally:
         boat.stop_motor()

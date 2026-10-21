@@ -144,8 +144,8 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
     GPS valide, puis sauvegardée à la fin du programme.
     """
 
-    origin_lat = np.deg2rad(48.198863)
-    origin_lon = np.deg2rad(-3.015070)
+    origin_lat = np.deg2rad(48.198858)
+    origin_lon = np.deg2rad(-3.014986)
 
     goal_xy = local_coordinates(target_lat, target_lon)
 
@@ -188,26 +188,16 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 
             if boat.lat_rad is None or boat.lon_rad is None:
                 boat.stop_motor()
-                print(math.degrees(theta))
-                telemetry.send({
-                    "latitude": None,
-                    "longitude": None,
-                    "x": None,
-                    "y": None,
-                    "heading_deg": math.degrees(theta),
-                    "motor_left": 0,
-                    "motor_right": 0,
-                    "distance_m": None,
-                    "new_gps": False,
-                    "target_reached": False,
-                    "boats": others.as_telemetry() if others is not None else [],
-                    "avoiding" : avoiding
-                })
-
+                boat.send_telemetry(
+                    distance_m=None,
+                    target_reached=False,
+                    new_gps=False
+                )
                 time.sleep(LOOP_PERIOD)
                 continue
 
-            
+
+            # ------------------------------------------
             # 3. Lecture du cap
             
 
@@ -247,22 +237,17 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 
             
             # 6. Envoi des données à l'IHM
-            x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
-            
-            telemetry.send({
-                "latitude": math.degrees(boat.lat_rad),
-                "longitude": math.degrees(boat.lon_rad),
-                "x": x,
-                "y": y,
-                "heading_deg": math.degrees(theta),
-                "motor_left": cmd_left,
-                "motor_right": cmd_right,
-                "distance_m": distance,
-                "new_gps": new_gps,
-                "target_reached": reached,
-                "boats": others.as_telemetry() if others is not None else [],
-                "avoiding" : avoiding
-            })
+            # ------------------------------------------
+
+            x, y = local_coordinates(
+                boat.lat_rad,
+                boat.lon_rad)
+
+            boat.send_telemetry(
+                distance_m=distance,
+                target_reached=reached,
+                new_gps=new_gps
+            )
 
             print("\rDistance : {:.2f} m | Cap : {:.1f} deg | Moteurs : {}, {}".format(distance,math.degrees(theta), cmd_left, cmd_right))
 
@@ -277,10 +262,6 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 
             if elapsed < LOOP_PERIOD:
                 time.sleep(LOOP_PERIOD - elapsed)
-
-    except KeyboardInterrupt:
-        print("\nNavigation interrompue par l'utilisateur.")
-        return False
 
     finally:
         boat.stop_motor()
@@ -299,8 +280,9 @@ if __name__ == "__main__":
         ard = ArduinoIO()
         gps = GpsIO()
         imu = Imu9IO()
+        telemetry = TelemetryServer()
 
-        boat = ddboat(ard, imu, gps)
+        boat = ddboat(ard, imu, gps, telemetry=telemetry)
 
         # Le serveur attend le client sans bloquer la navigation
         telemetry = TelemetryServer(

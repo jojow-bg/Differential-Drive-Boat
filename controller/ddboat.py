@@ -13,10 +13,10 @@ from navigation.navigation_utils import (
     nmea_to_radians,
     latlong2local,
     angle_difference,
-    get_quadrant
+    get_quadrant,
+    get_bearing_xy
 )
-
-from navigation.navigation_utils import get_bearing_xy
+from communication.fleet_manager import FleetManager
 from calibration.calibration_utils import load_calibration_json
 
 racine_projet = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,24 +27,35 @@ chemin_calibration = os.path.join(racine_projet,"calibration","mag_calib_params.
 
 class ddboat:
 
-    def __init__(self, ard, imu, gps):
+    def __init__(self, ard, imu, gps, telemetry = None):
         self.ard = ard
         self.imu = imu
         self.gps = gps
+        self.telemetry = telemetry
         self.x = None
         self.y = None
         self.lat_rad = None
         self.lon_rad = None
         self.heading = None
+        self.motor_left = 0
+        self.motor_right = 0
         self.INV_A, self.X_BAR = load_calibration_json(chemin_calibration)
         self.zone_limit = [
-            (np.deg2rad(48.198863), np.deg2rad(-3.015070)),
+            (np.deg2rad(48.198858), np.deg2rad(-3.014986)),
             (np.deg2rad(48.197408), np.deg2rad(-3.015060)),  
             (np.deg2rad(48.1970689), np.deg2rad(-3.017328)), 
             (np.deg2rad(48.199072), np.deg2rad(-3.016258)),  
             (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
             (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
         ]
+
+        self.fleet = FleetManager(
+                boat_id=2,
+                server_ip="172.20.26.111",
+                server_port=6800
+            )
+
+
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
         if msg and val[0]!=0:
@@ -60,13 +71,76 @@ class ddboat:
         y = self.INV_A @ (raw_mag - self.X_BAR)
         return math.atan2(y[1, 0], y[0, 0]) 
 
-    def update_position(self, lat_origin= np.deg2rad(48.198863), lon_origin = np.deg2rad(-3.015070)):
+    def update_position(self, lat_origin= np.deg2rad(48.198858), lon_origin = np.deg2rad(-3.014986)):
         self.update_gps()
         self.x, self.y = latlong2local(self.lat_rad, self.lon_rad, lat_origin, lon_origin)
 
     def update_heading(self):
         raw_mag = np.array(self.imu.read_mag_raw()).reshape(3, 1)
         self.heading = self.get_calibrated_heading(raw_mag)
+
+    def heading_to_compass(self):
+        return (90 + math.degrees(self.heading)) % 360
+
+    def update_fleet(self):
+        """Envoie notre position et récupère celles des autres bateaux."""
+
+        if self.lat_rad is None or self.lon_rad is None:
+            return []
+
+        if self.heading is None:
+            return []
+
+        self.fleet.update_own_position(
+            latitude=math.degrees(self.lat_rad),
+            longitude=math.degrees(self.lon_rad),
+            cap=self.heading_to_compass()
+        )
+
+        return self.fleet.get_other_boats()
+
+    def send_telemetry(self, distance_m=None, target_reached=False,new_gps=False):
+        """Envoie l'état actuel du bateau à l'IHM."""
+
+        # Met à jour les mesures disponibles
+        self.update_gps()
+        self.update_heading()
+
+        if self.lat_rad is not None and self.lon_rad is not None:
+            self.x, self.y = latlong2local(
+                self.lat_rad,
+                self.lon_rad
+            )
+
+        boats = self.update_fleet()
+
+        if self.telemetry is None:
+            return
+
+        data = {
+            "latitude": (
+                math.degrees(self.lat_rad)
+                if self.lat_rad is not None else None
+            ),
+            "longitude": (
+                math.degrees(self.lon_rad)
+                if self.lon_rad is not None else None
+            ),
+            "x": self.x,
+            "y": self.y,
+            "heading_deg": (
+                math.degrees(self.heading)
+                if self.heading is not None else None
+            ),
+            "motor_left": getattr(self, "motor_left", 0),
+            "motor_right": getattr(self, "motor_right", 0),
+            "distance_m": distance_m,
+            "new_gps": new_gps,
+            "target_reached": target_reached,
+            "boats": boats
+        }
+
+        self.telemetry.send(data)
 
     def control_motor(self, left_speed, right_speed):
         # Vérifie que deux vitesses ont été fournies
@@ -86,6 +160,8 @@ class ddboat:
         
 
         # Envoi des vitesses aux propulseurs
+        self.motor_left = left_speed
+        self.motor_right = right_speed
         self.ard.send_arduino_cmd_motor(left_speed, right_speed) 
     
 
@@ -93,7 +169,7 @@ class ddboat:
         if error_theta > np.deg2rad(tol_deg):
             return PWM_MOTOR,0
         elif error_theta < np.deg2rad(-tol_deg):
-            return 0,PWM_MOTOR
+            return -PWM_MOTOR/3,PWM_MOTOR
         else:
             return PWM_MOTOR, PWM_MOTOR
 
@@ -120,24 +196,31 @@ class ddboat:
         
         return left, right
 
-    def follow_heading(self, target_heading):
+    def follow_heading(self, target_heading, meth="TOR"):
         self.update_heading()
         diff = target_heading - self.heading
         e = math.atan2(math.sin(diff), math.cos(diff)) #si e>0, on est a gauche de l'objectif
-        left_speed, right_speed = self.compute_commands_TOR(e)
+        if meth=="DIFF":
+            left_speed, right_speed = self.compute_commands_diff(e)
+        else:
+            left_speed, right_speed = self.compute_commands_TOR(e)
+
         self.control_motor(left_speed, right_speed)
+        return [left_speed, right_speed]
 
 
     def stop_motor(self):
         # Arret des propulseurs
         self.ard.send_arduino_cmd_motor(0, 0)
+        self.motor_left = 0
+        self.motor_right = 0
         print("Propulseurs arretes.")
 
     
     def back_to_base(self, ):
 
-        lat_A = np.deg2rad(48.198863)
-        lon_A = np.deg2rad(-3.015070)
+        lat_A = np.deg2rad(48.198858)
+        lon_A = np.deg2rad(-3.014986)
         lat_B =np.deg2rad(48.199072)
         lon_B =np.deg2rad(-3.016258)
 
@@ -161,7 +244,8 @@ class ddboat:
         current_pos =np.array([[self.x], [self.y]])
 
         while np.linalg.norm(current_pos-A) > 3: 
-            
+            print("distance au point A = ", np.linalg.norm(current_pos-A))
+
             self.update_heading()
             self.update_position(lat_origin, lon_origin)
 
@@ -176,8 +260,13 @@ class ddboat:
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
             self.follow_heading(target_heading)
+            self.send_telemetry(
+                distance_m=None,
+                target_reached=False,
+                new_gps=False
+            )
 
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         return True
 
@@ -204,7 +293,7 @@ class ddboat:
         self.update_heading()
         theta_previous = self.heading
         angle_turned = 0.0
-        rotation_sign = None
+        rotation_sign = +1
 
         quadrants_visited = {get_quadrant(theta_previous)}
         start_time = time.monotonic()
@@ -225,14 +314,10 @@ class ddboat:
                 delta = angle_difference(theta, theta_previous)
                 theta_previous = theta
 
-                # Détermine le sens de rotation observé
-                if rotation_sign is None:
-                    if np.abs(delta) > math.radians(0.2):
-                        rotation_sign = -1 if delta > 0 else 1
 
                 # Cumule la rotation dans le sens initial observé
                 if rotation_sign is not None:
-                    angle_turned -= rotation_sign * delta
+                    angle_turned += rotation_sign * delta
 
                 # Enregistre les cadrans traversés
                 quadrants_visited.add(get_quadrant(theta))
@@ -250,6 +335,7 @@ class ddboat:
                         "été détectés. Vérifie la fréquence de lecture."
                     )
                     return False
+                self.send_telemetry()
 
             print("Échec : délai dépassé avant la validation du tour.")
             return False
@@ -271,6 +357,7 @@ class ddboat:
             return True
 
     def visit_polygon(self, polygon):
+        
         pts = [np.array(latlong2local(lat, lon), dtype=float).reshape(2, 1) for lat, lon in polygon]
         pts = pts + [pts[0]]
         for k in range(len(pts) - 1):
@@ -280,18 +367,33 @@ class ddboat:
             vec_ab = (stop_point - start_point).flatten()
             norm_ab = np.linalg.norm(vec_ab)
 
-
+            counter = 0
             while not self.pass_half_plan(start_point, stop_point, cartesian=True):
                 vec_am = np.array([self.x - start_point[0, 0],self.y - start_point[1, 0]])
                 det_2d = vec_ab[0] * vec_am[1] - vec_ab[1] * vec_am[0]
-
+                print("Following waypoint number ", k+1)
                 # - pour avoir e > 0 quand le bateau est à gauche de AB
                 e = -det_2d / norm_ab
 
                 # Bateau à gauche : on augmente le cap pour revenir vers la droite
-                psi_d = psi_segment + math.atan(e)
-                print(psi_d)
-                self.follow_heading(psi_d)
+                psi_d = psi_segment + math.atan(e/8)
+                cmd = self.follow_heading(psi_d, "DIFF")
+                cmd_left, cmd_right = cmd[0], cmd[1]
+
+                self.update_gps()
+                self.update_position()
+                self.update_heading()
+
+                distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
+                print("distance à à ce point : ", distance, "metres")
+                reached = False 
+                if counter % 5 ==0 :
+                    self.send_telemetry(
+                        distance_m=distance,
+                        target_reached=reached,
+                        new_gps=True
+                    )
                 time.sleep(0.1)
+                counter+=1
             
         self.stop_motor()
