@@ -220,12 +220,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 
             else:
                 desired_heading = get_bearing(boat.lat_rad, boat.lon_rad, target_lat, target_lon)
-
-                if others is not None :
-                    h, info = field_heading((x,y), goal_xy, others.positions())
-                    if info["avoiding"]:
-                        desired_heading, avoiding = h, True
-
+                
                 error_theta = sawtooth(desired_heading - theta)
 
                 cmd_left, cmd_right = boat.compute_commands_TOR(error_theta,PWM_MOTOR)
