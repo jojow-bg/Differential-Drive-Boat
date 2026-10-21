@@ -18,8 +18,8 @@ def main():
     ard = ArduinoIO()
     gps = GpsIO()
     imu = Imu9IO()
-    boat = ddboat(ard, imu, gps)
     telemetry = TelemetryServer()
+    boat = ddboat(ard, imu, gps, telemetry=telemetry)
 
     polygon = [
     (np.deg2rad(48.198960), np.deg2rad(-3.015091)),  # A
