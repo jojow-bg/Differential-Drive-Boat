@@ -244,6 +244,8 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
                 boat.lat_rad,
                 boat.lon_rad)
 
+            boat.x, boat.y = x, y
+
             boat.send_telemetry(
                 distance_m=distance,
                 target_reached=reached,
