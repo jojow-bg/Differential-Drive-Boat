@@ -22,14 +22,12 @@ def main():
     telemetry = TelemetryServer()
 
     polygon = [
-    (np.deg2rad(48.198960), np.deg2rad(-3.015091)),  # A
     (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
     (np.deg2rad(48.198124), np.deg2rad(-3.015355)),  # C
     (np.deg2rad(48.198259), np.deg2rad(-3.017114)),  # D
     (np.deg2rad(48.199027), np.deg2rad(-3.015887)),  # G'
     (np.deg2rad(48.199628), np.deg2rad(-3.016379)),  # E
     (np.deg2rad(48.199688), np.deg2rad(-3.015158)),  # F
-    (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
 ]
 
     try:
@@ -55,7 +53,7 @@ def main():
         
         station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
 
-        #boat.visit_polygon(polygon)
+        #boat.visit_polygon(polygon, telemetry)
         
     finally:
         boat.turn_around()
