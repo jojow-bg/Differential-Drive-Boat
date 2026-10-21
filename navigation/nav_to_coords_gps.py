@@ -136,7 +136,7 @@ def save_trajectory(positions, filename=TRAJECTORY_FILE):
 
 # NAVIGATION + TÉLÉMÉTRIE
 
-def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WAYPOINT_TOLERANCE, abort_if_outside_zone=False, others = None):
+def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WAYPOINT_TOLERANCE, abort_if_outside_zone=False, others = True):
     """
     Navigue vers un waypoint et transmet les données à l'IHM.
 
@@ -165,6 +165,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
             
             boat.update_gps()
             x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
+            boat.x, boat.y = x , y
 
             positions.append((x,y,math.degrees(boat.lat_rad),math.degrees(boat.lon_rad)))
 
@@ -220,9 +221,15 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 
             else:
                 desired_heading = get_bearing(boat.lat_rad, boat.lon_rad, target_lat, target_lon)
-                
-                error_theta = sawtooth(desired_heading - theta)
+                target_vector = np.array([[-math.sin(desired_heading)], [math.cos(desired_heading)]])
 
+                if others:
+                    boats = boat.update_fleet()
+                    target_vector = target_vector + boat.compute_field(boats)
+
+                desired_heading = np.arctan2(-target_vector[0, 0], target_vector[1, 0])
+
+                error_theta = sawtooth(desired_heading - theta)
                 cmd_left, cmd_right = boat.compute_commands_TOR(error_theta,PWM_MOTOR)
 
             
@@ -237,6 +244,8 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
             x, y = local_coordinates(
                 boat.lat_rad,
                 boat.lon_rad)
+
+            boat.x, boat.y = x, y
 
             boat.send_telemetry(
                 distance_m=distance,

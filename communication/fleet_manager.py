@@ -33,8 +33,7 @@ class FleetManager:
                 self.boat_id,
                 latitude,
                 longitude,
-                cap % 360
-            )
+                cap % 360)
             self.last_send = now
 
         except OSError as exc:
