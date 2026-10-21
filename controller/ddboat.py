@@ -9,6 +9,7 @@ import math
 dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
+from navigation.nav_to_coords_gps import get_distance_with_gps
 from navigation.navigation_utils import (
     nmea_to_radians,
     latlong2local,
@@ -217,7 +218,7 @@ class ddboat:
         print("Propulseurs arretes.")
 
     
-    def back_to_base(self, ):
+    def back_to_base(self, boat_rejection = True):
 
         lat_A = np.deg2rad(48.198858)
         lon_A = np.deg2rad(-3.014986)
@@ -259,7 +260,14 @@ class ddboat:
             #Calcul de son cap
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
-            self.follow_heading(target_heading)
+            if boat_rejection:
+                boats = self.update_fleet()
+                target_vector = target_vector + self.compute_field(boats)
+            
+            target_heading = np.arctan2(-target_vector[0, 0], target_vector[1, 0])
+            
+            
+            self.follow_heading(target_heading, meth="DIFF")
             self.send_telemetry(
                 distance_m=None,
                 target_reached=False,
@@ -356,7 +364,7 @@ class ddboat:
         if (x_stop-x_start)*(self.x-x_stop) + (y_stop-y_start) * (self.y-y_stop) > 0 :
             return True
 
-    def visit_polygon(self, polygon):
+    def visit_polygon(self, polygon, boat_rejection = True):
         
         pts = [np.array(latlong2local(lat, lon), dtype=float).reshape(2, 1) for lat, lon in polygon]
         pts = pts + [pts[0]]
@@ -377,9 +385,17 @@ class ddboat:
 
                 # Bateau à gauche : on augmente le cap pour revenir vers la droite
                 psi_d = psi_segment + math.atan(e/8)
-                cmd = self.follow_heading(psi_d, "DIFF")
-                cmd_left, cmd_right = cmd[0], cmd[1]
 
+                target_vector = np.array([[-math.sin(psi_d)], [math.cos(psi_d)]])
+
+                if boat_rejection:
+                    boats = self.update_fleet()
+                    target_vector = target_vector + self.compute_field(boats)
+                
+                target_heading = np.arctan2(-target_vector[0, 0], target_vector[1, 0])
+
+                self.follow_heading(target_heading, "DIFF")
+                
                 self.update_gps()
                 self.update_position()
                 self.update_heading()
@@ -397,3 +413,22 @@ class ddboat:
                 counter+=1
             
         self.stop_motor()
+
+
+    def compute_field(self, boats, d0 = 6):
+        self.update_gps()
+        current_pos =np.array([[self.x], [self.y]])
+        repulsion_vector = np.zeros((2,1))
+        for boat in boats:
+            #Si position récente et pas trop loin
+            if boat["age"] < 5 and get_distance_with_gps(self.lat_rad, self.lon_rad, np.deg2rad(boat["latitude"]), np.deg2rad(boat["longitude"])) < d0:
+                bx, by = latlong2local(np.deg2rad(boat["latitude"]), np.deg2rad(boat["longitude"]))
+                vec = current_pos - np.array([[bx], [by]])
+                d = max(np.linalg.norm(vec),0.5)
+                vec = vec/d
+                force = (d0/d)**2 - 1
+
+                tangent = np.array([[vec[1, 0]], [-vec[0, 0]]])  # permet un évitement à droite en cas de face à face
+                repulsion_vector += force * vec + 0.3 * force * tangent
+
+        return repulsion_vector
