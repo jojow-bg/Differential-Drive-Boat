@@ -18,6 +18,7 @@ from navigation.navigation_utils import (
     get_bearing_xy
 )
 from communication.fleet_manager import FleetManager
+from communication.direct_fleet_manager import DirectFleetManager
 from calibration.calibration_utils import load_calibration_json
 
 racine_projet = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,12 +50,46 @@ class ddboat:
             (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
             (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
         ]
+        
+        # Configuration de la communication entre bateaux.
+        # Mode par défaut : serveur central.
+        comm_mode = os.getenv("DDBOAT_COMM_MODE", "server").lower()
+        boat_id = int(os.getenv("DDBOAT_ID", "2"))
 
-        self.fleet = FleetManager(
-                boat_id=2,
-                server_ip="172.20.26.111",
-                server_port=6800
+        if comm_mode == "direct":
+            peer_ip = os.getenv("DDBOAT_PEER_IP")
+
+            if not peer_ip:
+                raise ValueError(
+                    "En mode direct, définis DDBOAT_PEER_IP "
+                    "avec l'adresse IP de l'autre bateau."
+                )
+
+            self.fleet = DirectFleetManager(
+                boat_id=boat_id,
+                peer_ip=peer_ip,
+                peer_port=int(os.getenv("DDBOAT_PEER_PORT", "6801")),
+                local_port=int(os.getenv("DDBOAT_LOCAL_PORT", "6801")),
             )
+
+        elif comm_mode == "server":
+            self.fleet = FleetManager(
+                boat_id=boat_id,
+                server_ip=os.getenv(
+                    "DDBOAT_SERVER_IP",
+                    "172.20.26.111"
+                ),
+                server_port=int(
+                    os.getenv("DDBOAT_SERVER_PORT", "6800")
+                ),
+            )
+
+        else:
+            raise ValueError(
+                f"Mode de communication inconnu : {comm_mode}. "
+                "Utilise 'server' ou 'direct'."
+            )
+
 
 
     def update_gps(self):
