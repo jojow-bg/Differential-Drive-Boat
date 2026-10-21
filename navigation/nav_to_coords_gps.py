@@ -165,6 +165,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
             
             boat.update_gps()
             x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
+            boat.x, boat.y = x , y
 
             positions.append((x,y,math.degrees(boat.lat_rad),math.degrees(boat.lon_rad)))
 
