@@ -47,7 +47,7 @@ ORIGIN_LAT, ORIGIN_LON = 48.198960, -3.015091
 # Le G final en double a été retiré. Mettre la même liste dans
 # ddboat.zone_limit pour que le bateau et l'IHM aient la même zone.
 ZONE_POINTS = [
-    ("A",  48.198863, -3.015070),
+    ("A",  48.198960, -3.015091),
     ("G",  48.198944, -3.015478),
     ("C",  48.198124, -3.015355),
     ("D",  48.198259, -3.017114),
