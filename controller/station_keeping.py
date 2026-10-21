@@ -15,12 +15,6 @@ from navigation.navigation_utils import (
 )
 from navigation.nav_to_coords_gps import go_to_waypoint_gps
 
-from controller.ddboat import ddboat
-from drivers.arduino_driver_v2 import ArduinoIO
-from drivers.gps_driver_v2 import GpsIO
-from drivers.imu9_driver_v2 import Imu9IO
-from communication.telemetry import TelemetryServer
-
 def in_circle(waypoint_xy, r_max, position_xy):
     distance_centre = np.sqrt((waypoint_xy[0] - position_xy[0])**2 + (waypoint_xy[1] - position_xy[1])**2)
     return distance_centre <= r_max

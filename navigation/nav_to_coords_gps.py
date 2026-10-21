@@ -210,22 +210,14 @@ def go_to_waypoint_gps(
 
             if boat.lat_rad is None or boat.lon_rad is None:
                 boat.stop_motor()
-                print(math.degrees(theta))
-                telemetry.send({
-                    "latitude": None,
-                    "longitude": None,
-                    "x": None,
-                    "y": None,
-                    "heading_deg": math.degrees(theta),
-                    "motor_left": 0,
-                    "motor_right": 0,
-                    "distance_m": None,
-                    "new_gps": False,
-                    "target_reached": False
-                })
-
+                boat.send_telemetry(
+                    distance_m=None,
+                    target_reached=False,
+                    new_gps=False
+                )
                 time.sleep(LOOP_PERIOD)
                 continue
+
 
             # ------------------------------------------
             # 3. Lecture du cap
@@ -283,19 +275,12 @@ def go_to_waypoint_gps(
             x, y = local_coordinates(
                 boat.lat_rad,
                 boat.lon_rad)
-            
-            telemetry.send({
-                "latitude": math.degrees(boat.lat_rad),
-                "longitude": math.degrees(boat.lon_rad),
-                "x": x,
-                "y": y,
-                "heading_deg": math.degrees(theta),
-                "motor_left": cmd_left,
-                "motor_right": cmd_right,
-                "distance_m": distance,
-                "new_gps": new_gps,
-                "target_reached": reached
-            })
+
+            boat.send_telemetry(
+                distance_m=distance,
+                target_reached=reached,
+                new_gps=new_gps
+            )
 
             print(
                 "\rDistance : {:.2f} m | Cap : {:.1f} deg | Moteurs : {}, {}".format(distance,math.degrees(theta), cmd_left, cmd_right)
@@ -337,8 +322,9 @@ if __name__ == "__main__":
         ard = ArduinoIO()
         gps = GpsIO()
         imu = Imu9IO()
+        telemetry = TelemetryServer
 
-        boat = ddboat(ard, imu, gps)
+        boat = ddboat(ard, imu, gps, telemetry=telemetry)
 
         # Le serveur attend le client sans bloquer la navigation
         telemetry = TelemetryServer(

@@ -27,10 +27,11 @@ chemin_calibration = os.path.join(racine_projet,"calibration","mag_calib_params.
 
 class ddboat:
 
-    def __init__(self, ard, imu, gps):
+    def __init__(self, ard, imu, gps, telemetry = None):
         self.ard = ard
         self.imu = imu
         self.gps = gps
+        self.telemetry = telemetry
         self.x = None
         self.y = None
         self.lat_rad = None
@@ -68,6 +69,47 @@ class ddboat:
         raw_mag = np.array(self.imu.read_mag_raw()).reshape(3, 1)
         self.heading = self.get_calibrated_heading(raw_mag)
 
+    def send_telemetry(self, distance_m=None, target_reached=False,new_gps=False):
+        """Envoie l'état actuel du bateau à l'IHM."""
+
+        if self.telemetry is None:
+            return
+
+        # Met à jour les mesures disponibles
+        self.update_gps()
+        self.update_heading()
+
+        if self.lat_rad is not None and self.lon_rad is not None:
+            self.x, self.y = latlong2local(
+                self.lat_rad,
+                self.lon_rad
+            )
+
+        data = {
+            "latitude": (
+                math.degrees(self.lat_rad)
+                if self.lat_rad is not None else None
+            ),
+            "longitude": (
+                math.degrees(self.lon_rad)
+                if self.lon_rad is not None else None
+            ),
+            "x": self.x,
+            "y": self.y,
+            "heading_deg": (
+                math.degrees(self.heading)
+                if self.heading is not None else None
+            ),
+            "motor_left": self.motor_left,
+            "motor_right": self.motor_right,
+            "distance_m": distance_m,
+            "new_gps": new_gps,
+            "target_reached": target_reached,
+            "navigation_mode": self.navigation_mode,
+        }
+
+        self.telemetry.send(data)
+
     def control_motor(self, left_speed, right_speed):
         # Vérifie que deux vitesses ont été fournies
         if len([left_speed, right_speed]) != 2:
@@ -86,6 +128,8 @@ class ddboat:
         
 
         # Envoi des vitesses aux propulseurs
+        self.motor_left = left_speed
+        self.motor_right = right_speed
         self.ard.send_arduino_cmd_motor(left_speed, right_speed) 
     
 
@@ -136,6 +180,8 @@ class ddboat:
     def stop_motor(self):
         # Arret des propulseurs
         self.ard.send_arduino_cmd_motor(0, 0)
+        self.motor_left = 0
+        self.motor_right = 0
         print("Propulseurs arretes.")
 
     
@@ -252,6 +298,7 @@ class ddboat:
                         "été détectés. Vérifie la fréquence de lecture."
                     )
                     return False
+                self.send_telemetry()
 
             print("Échec : délai dépassé avant la validation du tour.")
             return False
