@@ -13,10 +13,10 @@ from navigation.navigation_utils import (
     nmea_to_radians,
     latlong2local,
     angle_difference,
-    get_quadrant
+    get_quadrant,
+    get_bearing_xy
 )
-
-from navigation.navigation_utils import get_bearing_xy
+from communication.fleet_manager import FleetManager
 from calibration.calibration_utils import load_calibration_json
 
 racine_projet = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -46,6 +46,14 @@ class ddboat:
             (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
             (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
         ]
+
+        self.fleet = FleetManager(
+                boat_id=2,
+                server_ip="IP_DU_SERVEUR_CENTRAL",
+                server_port=6800
+            )
+
+
     def update_gps(self):
         msg, val = self.gps.read_gll_non_blocking()
         if msg and val[0]!=0:
@@ -69,11 +77,28 @@ class ddboat:
         raw_mag = np.array(self.imu.read_mag_raw()).reshape(3, 1)
         self.heading = self.get_calibrated_heading(raw_mag)
 
+    def heading_to_compass(self):
+        return (90 + math.degrees(self.heading)) % 360
+
+    def update_fleet(self):
+        """Envoie notre position et récupère celles des autres bateaux."""
+
+        if self.lat_rad is None or self.lon_rad is None:
+            return []
+
+        if self.heading is None:
+            return []
+
+        self.fleet.update_own_position(
+            latitude=math.degrees(self.lat_rad),
+            longitude=math.degrees(self.lon_rad),
+            cap=self.heading_to_compass()
+        )
+
+        return self.fleet.get_other_boats()
+
     def send_telemetry(self, distance_m=None, target_reached=False,new_gps=False):
         """Envoie l'état actuel du bateau à l'IHM."""
-
-        if self.telemetry is None:
-            return
 
         # Met à jour les mesures disponibles
         self.update_gps()
@@ -84,6 +109,11 @@ class ddboat:
                 self.lat_rad,
                 self.lon_rad
             )
+
+        boats = self.update_fleet()
+
+        if self.telemetry is None:
+            return
 
         data = {
             "latitude": (
@@ -100,11 +130,12 @@ class ddboat:
                 math.degrees(self.heading)
                 if self.heading is not None else None
             ),
-            "motor_left": self.motor_left,
-            "motor_right": self.motor_right,
+            "motor_left": getattr(self, "motor_left", 0),
+            "motor_right": getattr(self, "motor_right", 0),
             "distance_m": distance_m,
             "new_gps": new_gps,
             "target_reached": target_reached,
+            "boats": boats
         }
 
         self.telemetry.send(data)
@@ -136,7 +167,7 @@ class ddboat:
         if error_theta > np.deg2rad(tol_deg):
             return PWM_MOTOR,0
         elif error_theta < np.deg2rad(-tol_deg):
-            return -PWM_MOTOR/2,PWM_MOTOR
+            return -PWM_MOTOR/3,PWM_MOTOR
         else:
             return PWM_MOTOR, PWM_MOTOR
 
@@ -227,6 +258,11 @@ class ddboat:
             target_heading = np.arctan2(-target_vector[0][0], target_vector[1][0])
 
             self.follow_heading(target_heading)
+            self.send_telemetry(
+                distance_m=None,
+                target_reached=False,
+                new_gps=False
+            )
 
             time.sleep(0.2)
 
@@ -287,7 +323,7 @@ class ddboat:
                 print("\rRotation : {:.1f}° / 360° | Cadrans : {}".format(math.degrees(angle_turned), sorted(quadrants_visited)))
 
                 # Un tour complet a été mesuré
-                if angle_turned >= target_angle or angle_turned <= -math.degrees(360):
+                if angle_turned >= target_angle:
                     if len(quadrants_visited) == 4:
                         print("Tour complet validé : 360° et 4 cadrans parcourus.")
                         return True
@@ -349,18 +385,11 @@ class ddboat:
                 distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
                 reached = False 
                 if counter % 5 ==0 :
-                    self.send_telemetry({
-                                    "latitude": math.degrees(self.lat_rad),
-                                    "longitude": math.degrees(self.lon_rad),
-                                    "x": self.x,
-                                    "y": self.y,
-                                    "heading_deg": math.degrees(self.heading),
-                                    "motor_left": cmd_left,
-                                    "motor_right": cmd_right,
-                                    "distance_m": distance,
-                                    "new_gps": True,
-                                    "target_reached": reached
-                                })
+                    self.send_telemetry(
+                        distance_m=distance,
+                        target_reached=reached,
+                        new_gps=True
+                    )
                 time.sleep(0.1)
                 counter+=1
             

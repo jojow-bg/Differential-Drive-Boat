@@ -299,10 +299,6 @@ def go_to_waypoint_gps(
             if elapsed < LOOP_PERIOD:
                 time.sleep(LOOP_PERIOD - elapsed)
 
-    except KeyboardInterrupt:
-        print("\nNavigation interrompue par l'utilisateur.")
-        return False
-
     finally:
         boat.stop_motor()
         save_trajectory(positions)
@@ -322,7 +318,7 @@ if __name__ == "__main__":
         ard = ArduinoIO()
         gps = GpsIO()
         imu = Imu9IO()
-        telemetry = TelemetryServer
+        telemetry = TelemetryServer()
 
         boat = ddboat(ard, imu, gps, telemetry=telemetry)
 
