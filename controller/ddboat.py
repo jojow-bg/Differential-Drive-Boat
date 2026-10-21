@@ -105,7 +105,6 @@ class ddboat:
             "distance_m": distance_m,
             "new_gps": new_gps,
             "target_reached": target_reached,
-            "navigation_mode": self.navigation_mode,
         }
 
         self.telemetry.send(data)
@@ -137,7 +136,7 @@ class ddboat:
         if error_theta > np.deg2rad(tol_deg):
             return PWM_MOTOR,0
         elif error_theta < np.deg2rad(-tol_deg):
-            return -PWM_MOTOR,PWM_MOTOR
+            return -PWM_MOTOR/2,PWM_MOTOR
         else:
             return PWM_MOTOR, PWM_MOTOR
 
