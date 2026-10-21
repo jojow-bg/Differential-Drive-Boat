@@ -41,13 +41,13 @@ SERVER_PORT = 5002
 MY_NAME = "DDBoat02"             # nom affiché pour ce bateau
 
 # Origine du repère local du bateau (= "Base", comme dans ddboat.py)
-ORIGIN_LAT, ORIGIN_LON = 48.198863, -3.015070
+ORIGIN_LAT, ORIGIN_LON = 48.198858, -3.014986
 
 # Zone de navigation (le "polygon" : A, G, C, D, G', E, F), en degrés.
 # Le G final en double a été retiré. Mettre la même liste dans
 # ddboat.zone_limit pour que le bateau et l'IHM aient la même zone.
 ZONE_POINTS = [
-    ("A",  48.198863, -3.015070),
+    ("A",  48.198858, -3.014986),
     ("G",  48.198944, -3.015478),
     ("C",  48.198124, -3.015355),
     ("D",  48.198259, -3.017114),

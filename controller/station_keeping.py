@@ -33,8 +33,8 @@ def station(boat, gps, imu, telemetry, waypoint, r_max):
     waypoint_lat, waypoint_lon = waypoint
 
     # Origine du repère local, identique à celle de update_position()
-    lat_origin = np.deg2rad(48.198960)
-    lon_origin = np.deg2rad(-3.015091)
+    lat_origin = np.deg2rad(48.198858)
+    lon_origin = np.deg2rad(-3.014986)
 
     # Coordonnées locales du waypoint
     waypoint_x, waypoint_y = latlong2local(waypoint_lat, waypoint_lon, lat_origin, lon_origin)

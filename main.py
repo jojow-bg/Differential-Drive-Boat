@@ -22,6 +22,7 @@ def main():
     boat = ddboat(ard, imu, gps, telemetry=telemetry)
 
     polygon = [
+    (np.deg2rad(48.198858), np.deg2rad(-3.014986)), #A
     (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
     (np.deg2rad(48.198124), np.deg2rad(-3.015355)),  # C
     (np.deg2rad(48.198259), np.deg2rad(-3.017114)),  # D
@@ -51,12 +52,14 @@ def main():
         target_lat_station = np.deg2rad(48.199027)
         target_lon_station = np.deg2rad(-3.015887)
         
-        station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
+        #station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
 
-        #boat.visit_polygon(polygon, telemetry)
+        boat.visit_polygon(polygon)
+
+        boat.back_to_base()
         
     finally:
-        boat.turn_around()
+        #boat.turn_around()
         boat.back_to_base()
         boat.stop_motor()
 

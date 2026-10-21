@@ -161,8 +161,8 @@ def go_to_waypoint_gps(
     GPS valide, puis sauvegardée à la fin du programme.
     """
 
-    origin_lat = np.deg2rad(48.198960)
-    origin_lon = np.deg2rad(-3.015091)
+    origin_lat = np.deg2rad(48.198858)
+    origin_lon = np.deg2rad(-3.014986)
 
     # Lignes : x, y, latitude en degrés, longitude en degrés
     positions = []
