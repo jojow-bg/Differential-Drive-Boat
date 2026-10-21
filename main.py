@@ -53,7 +53,7 @@ def main():
         
         station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
 
-        #boat.visit_polygon(polygon, telemetry)
+        #boat.visit_polygon(polygon)
         
     finally:
         boat.turn_around()

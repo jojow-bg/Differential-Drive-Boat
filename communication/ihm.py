@@ -41,7 +41,7 @@ SERVER_PORT = 5002
 MY_NAME = "DDBoat02"             # nom affiché pour ce bateau
 
 # Origine du repère local du bateau (= "Base", comme dans ddboat.py)
-ORIGIN_LAT, ORIGIN_LON = 48.198863, -3.015070
+ORIGIN_LAT, ORIGIN_LON = 48.198960, -3.015091
 
 # Zone de navigation (le "polygon" : A, G, C, D, G', E, F), en degrés.
 # Le G final en double a été retiré. Mettre la même liste dans
