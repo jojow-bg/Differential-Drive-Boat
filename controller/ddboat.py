@@ -335,7 +335,7 @@ class ddboat:
             while not self.pass_half_plan(start_point, stop_point, cartesian=True):
                 vec_am = np.array([self.x - start_point[0, 0],self.y - start_point[1, 0]])
                 det_2d = vec_ab[0] * vec_am[1] - vec_ab[1] * vec_am[0]
-
+                print("Following waypoint number ", k+1)
                 # - pour avoir e > 0 quand le bateau est à gauche de AB
                 e = -det_2d / norm_ab
 
@@ -349,6 +349,7 @@ class ddboat:
                 self.update_heading()
 
                 distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
+                print("distance à à ce point : ", distance, "metres")
                 reached = False 
                 if counter % 5 == 0:
                     self.send_telemetry(distance, new_gps=True)
