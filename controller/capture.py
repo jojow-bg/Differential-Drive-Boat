@@ -6,11 +6,11 @@ EARTH_RADIUS = 6371000.0
 SEPARATION_M = 5.0              # écart entre les deux bateaux pendant l'approche
 MIN_SAFE_DISTANCE_M = 1.5       # distance minimale (APPROACH / ALIGN / CAPTURE)
 RETURN_MIN_DISTANCE_M = 0.5     # seuil plus bas en RETURN (bateaux proches, corde détendue)
-APPROACH_TOLERANCE_M = 2.0
+APPROACH_TOLERANCE_M = 5.0
 HEADING_TOLERANCE_DEG = 10.0
 MAX_GPS_AGE_S = 2.0             # 5 s = jusqu'à ~10 m d'erreur à 2 m/s
 MAX_LOOP_GAP_S = 2.0            # trou maximal dans la boucle de contrôle
-CONFIRM_TIME_S = 2.0            # une condition doit rester vraie ce temps avant validation
+CONFIRM_TIME_S = 5.0            # une condition doit rester vraie ce temps avant validation
 MIN_LATERAL_OFFSET_M = 0.5      # écart minimal à la ligne pour décider du côté
 ORBIT_LOOKAHEAD_DEG = 10.0
 
@@ -30,12 +30,12 @@ def wrap_angle(angle):
 
 def heading_deg_to_math(cap_deg):
     """Convertit le cap de ddboat.py en angle mathématique."""
-    return math.radians(cap_deg - 90.0)
+    return math.radians(90.0 - cap_deg)
 
 
 def math_to_heading_deg(angle):
     """Convertit un angle mathématique en cap de flotte dans [0, 360)."""
-    return (90.0 + math.degrees(angle)) % 360.0
+    return (90.0 - math.degrees(angle)) % 360.0
 
 
 def gps_to_xy(latitude, longitude, reference_lat, reference_lon):
@@ -272,8 +272,8 @@ class CatchController:
         half = SEPARATION_M / 2.0
 
         self.approach_targets = {
-            1: (nx * half, ny * half),
-            -1: (-nx * half, -ny * half),
+            1: (x0 + nx * half, ny * half),
+            -1: (x0 -nx * half, -ny * half),
         }
 
         # Rôles : A orbite autour de B.
@@ -366,6 +366,8 @@ class CatchController:
             target_gps = xy_to_gps(*own_target_xy, self.reference_lat, self.reference_lon)
             at_target = get_distance_xy(*own_xy, *own_target_xy) <= APPROACH_TOLERANCE_M
             ready = self._confirmed(at_target, now)
+
+            print("[{}] APPROACH own_xy={}, target_xy={}, distance_cible={:.2f} m, at_target={}, ready={}, partner_state={}, partner_ready={}". format(self.boat_id, own_xy , own_target_xy, get_distance_xy(*own_xy, *own_target_xy), at_target, ready, other.get('state'),other.get('ready')))
 
             if ready and self._other_allows(other):
                 self._set_state(self.ALIGN, now)

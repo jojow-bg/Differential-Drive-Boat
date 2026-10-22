@@ -33,8 +33,8 @@ def main():
     os.environ["DDBOAT_PEER_PORT"] = "6801"
 
     # Coordonnées GPS en degrés décimaux
-    base_a = (48.198903, -3.014986)
-    base_b = (48.198858, -3.014986)
+    base_a = (48.198858, -3.014986)
+    base_b = (48.198903, -3.014986)
     waypoint_goal = (48.198944, -3.015478)
 
     base_position = base_a if role == "A" else base_b

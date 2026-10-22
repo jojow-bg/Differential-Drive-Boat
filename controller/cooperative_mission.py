@@ -18,11 +18,11 @@ from controller.capture import CatchController
 CONTROL_PERIOD_S = 0.1
 
 # Tolérance d'arrivée sur une cible GPS
-WAYPOINT_TOLERANCE_M = 3.0
+WAYPOINT_TOLERANCE_M = 5.0
 
 # Sécurité : une donnée partenaire plus vieille que cette durée
 # provoque l'arrêt de la mission.
-MAX_PARTNER_AGE_S = 2.0
+MAX_PARTNER_AGE_S = 5.0
 
 # Commandes moteur
 PWM_MAX = 191

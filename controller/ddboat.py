@@ -115,7 +115,7 @@ class ddboat:
         self.heading = self.get_calibrated_heading(raw_mag)
 
     def heading_to_compass(self):
-        return (90 + math.degrees(self.heading)) % 360
+        return (math.degrees(self.heading)) % 360
 
     def update_fleet(self, state=None, ready=False):
         """Envoie notre position et récupère celles des autres bateaux."""
