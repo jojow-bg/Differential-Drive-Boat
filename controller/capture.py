@@ -6,11 +6,11 @@ EARTH_RADIUS = 6371000.0
 SEPARATION_M = 5.0              # écart entre les deux bateaux pendant l'approche
 MIN_SAFE_DISTANCE_M = 1.5       # distance minimale (APPROACH / ALIGN / CAPTURE)
 RETURN_MIN_DISTANCE_M = 0.5     # seuil plus bas en RETURN (bateaux proches, corde détendue)
-APPROACH_TOLERANCE_M = 5.0
+APPROACH_TOLERANCE_M = 3.0
 HEADING_TOLERANCE_DEG = 10.0
 MAX_GPS_AGE_S = 2.0             # 5 s = jusqu'à ~10 m d'erreur à 2 m/s
 MAX_LOOP_GAP_S = 2.0            # trou maximal dans la boucle de contrôle
-CONFIRM_TIME_S = 1.3           # une condition doit rester vraie ce temps avant validation
+CONFIRM_TIME_S = 2.0            # une condition doit rester vraie ce temps avant validation
 MIN_LATERAL_OFFSET_M = 0.5      # écart minimal à la ligne pour décider du côté
 ORBIT_LOOKAHEAD_DEG = 10.0
 APPROACH_STANDOFF_M = 1.0       # recul du centre de formation avant la bouée
@@ -392,11 +392,12 @@ class CatchController:
         # ALIGN : maintien de position + orientation, avec barrière
         # ----------------------------------------------------------
         if self.state == self.ALIGN:
+            # Cap tiré de la formation théorique : le relèvement entre deux
+            # positions GPS bruitées à 5 m l'une de l'autre varie de ±15°.
             if self.is_orbiting_boat:
-                theta = math.atan2(a_xy[1] - b_xy[1], a_xy[0] - b_xy[0])
-                desired_heading = wrap_angle(theta + self.orbit_direction * math.pi / 2.0)
+                desired_heading = wrap_angle(self.orbit_start_angle + self.orbit_direction * math.pi / 2.0)
             else:
-                desired_heading = get_desired_heading_b(*a_xy, *b_xy)
+                desired_heading = wrap_angle(self.orbit_start_angle + math.pi)
 
             current_heading = heading_deg_to_math(own["heading_deg"])
             heading_error = get_heading_error(desired_heading, current_heading)
@@ -404,6 +405,11 @@ class CatchController:
             aligned = abs(heading_error) <= math.radians(HEADING_TOLERANCE_DEG)
             in_place = get_distance_xy(*own_xy, *own_target_xy) <= APPROACH_TOLERANCE_M
             ready = self._confirmed(aligned and in_place, now)
+
+            print("[{}] ALIGN erreur_cap={:.0f}° aligned={} distance_cible={:.1f} m in_place={} ready={} partner_state={} partner_ready={}".format(
+                self.boat_id, math.degrees(heading_error), aligned,
+                get_distance_xy(*own_xy, *own_target_xy), in_place, ready,
+                other.get("state"), other.get("ready")))
 
             if ready and self._other_allows(other):
                 self._set_state(self.CAPTURE, now)

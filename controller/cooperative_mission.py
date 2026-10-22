@@ -33,7 +33,11 @@ PWM_CRUISE = 100
 PWM_SLOW = 65
 SLOW_DOWN_DISTANCE_M = 5.0
 TURN_IN_PLACE_GAIN = 80.0
-TURN_IN_PLACE_TOLERANCE_DEG = 10.0
+# Plus serré que HEADING_TOLERANCE_DEG de capture.py (10°), sinon le bateau
+# s'arrête pile à la limite et le bruit du cap annule la validation.
+TURN_IN_PLACE_TOLERANCE_DEG = 5.0
+# En dessous, les propulseurs ne font pas pivoter le bateau.
+TURN_IN_PLACE_MIN_PWM = 50
 
 
 def distance_m(lat1, lon1, lat2, lon2):
@@ -142,7 +146,9 @@ def turn_in_place(boat, desired_heading_deg):
         boat.stop_motor()
         return
 
-    turn = int(max(-PWM_MAX, min(PWM_MAX, TURN_IN_PLACE_GAIN * error)))
+    turn = TURN_IN_PLACE_GAIN * error
+    turn = math.copysign(max(abs(turn), TURN_IN_PLACE_MIN_PWM), turn)
+    turn = int(max(-PWM_MAX, min(PWM_MAX, turn)))
     boat.control_motor(turn, -turn)
 
 
