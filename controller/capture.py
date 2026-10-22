@@ -1,7 +1,7 @@
 import math
 import time
 
-EARTH_RADIUS = 6_371_000.0
+EARTH_RADIUS = 6371000.0
 
 SEPARATION_M = 5.0              # écart entre les deux bateaux pendant l'approche
 MIN_SAFE_DISTANCE_M = 1.5       # distance minimale (APPROACH / ALIGN / CAPTURE)
@@ -30,12 +30,12 @@ def wrap_angle(angle):
 
 def heading_deg_to_math(cap_deg):
     """Convertit le cap de ddboat.py en angle mathématique."""
-    return math.radians(90.0 - cap_deg)
+    return math.radians(cap_deg - 90.0)
 
 
 def math_to_heading_deg(angle):
     """Convertit un angle mathématique en cap de flotte dans [0, 360)."""
-    return (90.0 - math.degrees(angle)) % 360.0
+    return (90.0 + math.degrees(angle)) % 360.0
 
 
 def gps_to_xy(latitude, longitude, reference_lat, reference_lon):
@@ -335,7 +335,7 @@ class CatchController:
 
         timeout = STATE_TIMEOUT_S.get(self.state)
         if timeout is not None and now - self.state_entered > timeout:
-            return self.abort(f"Délai dépassé dans l'état {self.state}")
+            return self.abort("Délai dépassé dans l'état {}".format(self.state))
 
         # --- Initialisation de la géométrie ---
         if self.reference_lat is None:
@@ -444,11 +444,16 @@ class CatchController:
                                        self.reference_lat, self.reference_lon)
                 desired_heading = math_to_heading_deg(get_desired_heading_b(*a_xy, *b_xy))
 
-            return self._decision(target_gps=target_gps,
-                                  desired_heading_deg=desired_heading,
-                                  ready=ready,
-                                  orbit_progress_deg=math.degrees(self.orbit_progress),
-                                  distance_between_boats_m=distance)
+            return self._decision(
+                target_gps=target_gps,
+                desired_heading_deg=desired_heading,
+                ready=ready,
+                # B doit s'orienter sans que la cible GPS ne remplace
+                # son cap par un cap de navigation vers le centre.
+                hold_position=not self.is_orbiting_boat,
+                orbit_progress_deg=math.degrees(self.orbit_progress),
+                distance_between_boats_m=distance,
+            )
 
         # ----------------------------------------------------------
         # RETURN : chaque bateau rejoint SA base (bases distinctes)

@@ -12,7 +12,6 @@ import numpy as np
 dossier_parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(dossier_parent)
 
-from controller.ddboat import ddboat
 from navigation.navigation_utils import (
     sawtooth,
     nmea_to_radians,
@@ -166,6 +165,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
             boat.update_gps()
             x, y = local_coordinates(boat.lat_rad,boat.lon_rad)
             boat.x, boat.y = x , y
+            new_gps = True
 
             positions.append((x,y,math.degrees(boat.lat_rad),math.degrees(boat.lon_rad)))
 
@@ -230,7 +230,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
                 desired_heading = np.arctan2(-target_vector[0, 0], target_vector[1, 0])
 
                 error_theta = sawtooth(desired_heading - theta)
-                cmd_left, cmd_right = boat.compute_commands_TOR(error_theta,PWM_MOTOR)
+                cmd_left, cmd_right = boat.compute_commands_diff(error_theta)
 
             
             # 5. Commande réelle des moteurs 
@@ -275,6 +275,7 @@ def go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=WA
 # POINT D'ENTRÉE
 
 if __name__ == "__main__":
+    from controller.ddboat import ddboat
     ard = None
     gps = None
     telemetry = None

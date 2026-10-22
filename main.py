@@ -1,83 +1,128 @@
-import sys
-import time
+
 import os
 import numpy as np
 
 from controller.ddboat import ddboat
+from controller.cooperative_mission import run_cooperative_mission
 from drivers.arduino_driver_v2 import ArduinoIO
 from drivers.gps_driver_v2 import GpsIO
 from drivers.imu9_driver_v2 import Imu9IO
 from communication.telemetry import TelemetryServer
-from navigation.nav_to_coords_gps import go_to_waypoint_gps
-from controller.station_keeping import station
+
 
 def main():
-    target_lat = np.deg2rad(48.198944)
-    target_lon = np.deg2rad(-3.015478)
-    
-    ard = ArduinoIO()
-    gps = GpsIO()
-    imu = Imu9IO()
-    telemetry = TelemetryServer()
-    boat = ddboat(ard, imu, gps, telemetry=telemetry)
+    # --------------------------------------------------
+    # Configuration de la mission coopérative
+    # --------------------------------------------------
 
-    polygon = [
-    (np.deg2rad(48.198858), np.deg2rad(-3.014986)), #A
-    (np.deg2rad(48.198944), np.deg2rad(-3.015478)),  # G
-    (np.deg2rad(48.198124), np.deg2rad(-3.015355)),  # C
-    (np.deg2rad(48.198259), np.deg2rad(-3.017114)),  # D
-    (np.deg2rad(48.199027), np.deg2rad(-3.015887)),  # G'
-    (np.deg2rad(48.199628), np.deg2rad(-3.016379)),  # E
-    (np.deg2rad(48.199688), np.deg2rad(-3.015158)),  # F
-]
+    # A = orbiteur ; B = bateau central
+    role = os.getenv("DDBOAT_ROLE", "A").upper()
+
+    if role not in ("A", "B"):
+        raise ValueError("DDBOAT_ROLE doit valoir A ou B.")
+
+    # Identifiants distincts entre les deux bateaux
+    os.environ["DDBOAT_COMM_MODE"] = "direct"
+    os.environ["DDBOAT_ID"] = os.getenv(
+        "DDBOAT_ID", "2" if role == "A" else "5"
+    )
+    os.environ["DDBOAT_PEER_IP"] = os.getenv(
+        "DDBOAT_PEER_IP", "172.20.25.205"
+    )
+    os.environ["DDBOAT_LOCAL_PORT"] = "6801"
+    os.environ["DDBOAT_PEER_PORT"] = "6801"
+
+    # Coordonnées GPS en degrés décimaux
+    base_a = (48.198903, -3.014986)
+    base_b = (48.198858, -3.014986)
+    waypoint_goal = (48.198944, -3.015478)
+
+    base_position = base_a if role == "A" else base_b
+    boat_id = int(os.environ["DDBOAT_ID"])
+
+    # --------------------------------------------------
+    # Initialisation du matériel existant
+    # --------------------------------------------------
+
+    ard = None
+    gps = None
+    imu = None
+    telemetry = None
+    boat = None
 
     try:
-        while (boat.lat_rad is None or boat.lon_rad is None):
-            boat.update_gps()
-            time.sleep(1)
+        ard = ArduinoIO()
+        gps = GpsIO()
+        imu = Imu9IO()
+        telemetry = TelemetryServer()
 
-        print("Connexion GPS réussi")
-        #go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5, abort_if_outside_zone=True)
-        """    
-        result = go_to_waypoint_gps(boat, gps, imu, telemetry, target_lat, target_lon, tol=5, abort_if_outside_zone=True)
+        boat = ddboat(
+            ard,
+            imu,
+            gps,
+            telemetry=telemetry,
+        )
 
-        if result is False:
-            print("Navigation interrompue : retour à la base.")
-        elif result is True:
-            print("Waypoint atteint : retour à la base.")
-        else:
-            print("Résultat de navigation inattendu.")+
-        """
-        #on test le station keeping
-        target_lat_station = np.deg2rad(48.199027)
-        target_lon_station = np.deg2rad(-3.015887)
-        
-        #station(boat, gps, imu, telemetry, (target_lat_station, target_lon_station), r_max=5)
+        print("===================================")
+        print("Mission de capture coopérative")
+        print("Rôle :", role)
+        print("Identifiant :", boat_id)
+        print("Base :", base_position)
+        print("Cible :", waypoint_goal)
+        print("===================================")
 
-        boat.visit_polygon(polygon)
+        # La boucle de mission prend en charge la navigation,
+        # la synchronisation avec le partenaire et l'arrêt sûr.
+        run_cooperative_mission(
+            boat=boat,
+            boat_id=boat_id,
+            is_orbiting_boat=(role == "A"),
+            base_position=base_position,
+            waypoint_goal=waypoint_goal,
+            orbit_radius_m=5.0,
+        )
 
-        boat.back_to_base()
-        
+    except KeyboardInterrupt:
+        print("\nInterruption demandée par l'utilisateur.")
+
+    except Exception as error:
+        print("Erreur pendant la mission :", error)
+
     finally:
-        #boat.turn_around()
+        # Arrêt moteur prioritaire avant de fermer le matériel.
         boat.back_to_base()
-        boat.stop_motor()
+        if boat is not None:
+            try:
+                boat.stop_motor()
+            except Exception as error:
+                print("Erreur lors de l'arrêt des moteurs :", error)
 
-        try:
-            gps.close()
-        except Exception:
-            pass
+            # Ferme le socket et le thread UDP si disponibles.
+            fleet = getattr(boat, "fleet", None)
+            if fleet is not None and hasattr(fleet, "close"):
+                try:
+                    fleet.close()
+                except Exception:
+                    pass
 
-        try:
-            telemetry.close()
-        except Exception:
-            pass
+        if gps is not None:
+            try:
+                gps.close()
+            except Exception:
+                pass
 
-        try:
-            if ard.arduino is not None:
-                ard.arduino.close()
-        except Exception:
-            pass
+        if telemetry is not None:
+            try:
+                telemetry.close()
+            except Exception:
+                pass
+
+        if ard is not None:
+            try:
+                if ard.arduino is not None:
+                    ard.arduino.close()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
