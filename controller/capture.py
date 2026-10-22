@@ -10,9 +10,10 @@ APPROACH_TOLERANCE_M = 5.0
 HEADING_TOLERANCE_DEG = 10.0
 MAX_GPS_AGE_S = 2.0             # 5 s = jusqu'à ~10 m d'erreur à 2 m/s
 MAX_LOOP_GAP_S = 2.0            # trou maximal dans la boucle de contrôle
-CONFIRM_TIME_S = 5.0            # une condition doit rester vraie ce temps avant validation
+CONFIRM_TIME_S = 1.5            # une condition doit rester vraie ce temps avant validation
 MIN_LATERAL_OFFSET_M = 0.5      # écart minimal à la ligne pour décider du côté
 ORBIT_LOOKAHEAD_DEG = 10.0
+APPROACH_STANDOFF_M = 1.0       # recul du centre de formation avant la bouée
 
 # Durée maximale par état avant abandon (secondes).
 STATE_TIMEOUT_S = {
@@ -271,9 +272,13 @@ class CatchController:
         nx, ny = -vy, vx
         half = SEPARATION_M / 2.0
 
+        # Centre de formation juste avant la bouée, du côté d'où arrivent les bateaux.
+        cx = -vx * APPROACH_STANDOFF_M
+        cy = -vy * APPROACH_STANDOFF_M
+
         self.approach_targets = {
-            1: (x0 + nx * half, y0 + ny * half),
-            -1: (x0 -nx * half, y0 -ny * half),
+            1: (cx + nx * half, cy + ny * half),
+            -1: (cx - nx * half, cy - ny * half),
         }
 
         # Rôles : A orbite autour de B.
@@ -313,8 +318,15 @@ class CatchController:
         for data in (own, other):
             if any(data.get(key) is None for key in required):
                 return self.abort("Données GPS ou cap manquants")
-            if data["age"] > MAX_GPS_AGE_S:
-                return self.abort("Données de flotte trop anciennes")
+
+        if own["age"] > MAX_GPS_AGE_S:
+            return self.abort("Données GPS trop anciennes")
+
+        # Un partenaire en DONE a quitté sa boucle et n'émet plus :
+        # ses données vieillissent normalement.
+        partner_done = other.get("state") == self.DONE
+        if not partner_done and other["age"] > MAX_GPS_AGE_S:
+            return self.abort("Données de flotte trop anciennes")
 
         if other.get("state") is None:
             return self.abort("État de l'autre bateau manquant")
@@ -396,8 +408,7 @@ class CatchController:
             if ready and self._other_allows(other):
                 self._set_state(self.CAPTURE, now)
                 ready = False
-                # Référence d'angle commune aux deux bateaux (issue de la géométrie).
-                self.previous_orbit_angle = self.orbit_start_angle
+                self.previous_orbit_angle = math.atan2(a_xy[1] - b_xy[1], a_xy[0] - b_xy[0])
                 self.orbit_progress = 0.0
 
             # Le bateau tient sa position pendant l'alignement.
@@ -406,7 +417,8 @@ class CatchController:
             return self._decision(target_gps=hold_gps,
                                   desired_heading_deg=math_to_heading_deg(desired_heading),
                                   ready=ready,
-                                  heading_error_deg=math.degrees(heading_error))
+                                  heading_error_deg=math.degrees(heading_error),
+                                  hold_position=True)
 
         # ----------------------------------------------------------
         # CAPTURE : demi-cercle coordonné
@@ -453,6 +465,7 @@ class CatchController:
                 # B doit s'orienter sans que la cible GPS ne remplace
                 # son cap par un cap de navigation vers le centre.
                 hold_position=not self.is_orbiting_boat,
+                track_target=self.is_orbiting_boat,
                 orbit_progress_deg=math.degrees(self.orbit_progress),
                 distance_between_boats_m=distance,
             )

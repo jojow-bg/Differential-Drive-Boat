@@ -18,15 +18,22 @@ from controller.capture import CatchController
 CONTROL_PERIOD_S = 0.1
 
 # Tolérance d'arrivée sur une cible GPS
-WAYPOINT_TOLERANCE_M = 5.0
+WAYPOINT_TOLERANCE_M = 2.0
 
 # Sécurité : une donnée partenaire plus vieille que cette durée
 # provoque l'arrêt de la mission.
 MAX_PARTNER_AGE_S = 5.0
 
+# Un seul paquet UDP peut se perdre : l'état final est répété.
+TERMINAL_STATE_REPEATS = 5
+
 # Commandes moteur
 PWM_MAX = 191
 PWM_CRUISE = 100
+PWM_SLOW = 65
+SLOW_DOWN_DISTANCE_M = 5.0
+TURN_IN_PLACE_GAIN = 80.0
+TURN_IN_PLACE_TOLERANCE_DEG = 10.0
 
 
 def distance_m(lat1, lon1, lat2, lon2):
@@ -73,8 +80,8 @@ def wrap_angle(angle):
 def execute_decision(boat, decision):
     """
     Exécute une décision de CatchController.
-    Les caps de flotte sont des caps compas (0° nord, 90° est).
-    ddboat.heading est un angle mathématique (0 rad est, pi/2 nord).
+    Les caps de flotte et ddboat.heading sont des caps compas
+    (0 = nord, 90° = est, sens horaire), en degrés et en radians.
     """
     if decision.get("stop_required"):
         boat.stop_motor()
@@ -87,48 +94,37 @@ def execute_decision(boat, decision):
     target = decision.get("target_gps")
     desired_heading = decision.get("desired_heading_deg")
 
-    # Pour B pendant CAPTURE, le point GPS décrit le centre nominal ;
-    # le cap est prioritaire. On tourne sur place au lieu de naviguer
-    # vers ce point et d'écraser le cap demandé.
-    if decision.get("hold_position") and desired_heading is not None:
-        desired_math = math.radians(desired_heading)
-        error = wrap_angle(desired_math - boat.heading)
-        turn = int(max(-PWM_MAX, min(PWM_MAX, 80.0 * error)))
-        if abs(error) < math.radians(10.0):
-            boat.stop_motor()
-        else:
-            # Même principe de rotation sur place que ddboat.turn_around().
-            boat.control_motor(turn, -turn)
-        return
-
+    distance = None
     if target is not None:
         target_lat, target_lon = target
         current_lat = math.degrees(boat.lat_rad)
         current_lon = math.degrees(boat.lon_rad)
         distance = distance_m(current_lat, current_lon, target_lat, target_lon)
 
-        if distance > WAYPOINT_TOLERANCE_M:
-            desired_heading = bearing_deg(
-                current_lat, current_lon, target_lat, target_lon
-            )
-        elif desired_heading is None:
-            boat.stop_motor()
-            return
-    else:
-        distance = None
+    on_target = distance is None or distance <= WAYPOINT_TOLERANCE_M
+
+    # Sur le point, le cap demandé est tenu en tournant sur place :
+    # avancer ferait dériver le bateau hors de sa position.
+    if decision.get("hold_position") and desired_heading is not None and on_target:
+        turn_in_place(boat, desired_heading)
+        return
+
+    # A doit suivre son point d'orbite en continu : ce point est toujours
+    # plus proche que la tolérance d'arrivée.
+    must_track = decision.get("track_target", False)
+
+    if target is not None and (not on_target or must_track):
+        desired_heading = bearing_deg(current_lat, current_lon, target_lat, target_lon)
 
     if desired_heading is None:
         boat.stop_motor()
         return
 
-    # ddboat.heading_to_compass() = (90 + degrees(heading)) % 360.
-    # Donc le cap compas se convertit en angle interne par cap - 90°.
-    desired_math = math.radians(desired_heading)
-    error = wrap_angle(desired_math - boat.heading)
+    error = wrap_angle(math.radians(desired_heading) - boat.heading)
 
     pwm = PWM_CRUISE
-    if distance is not None and distance < 5.0:
-        pwm = 65
+    if distance is not None and distance < SLOW_DOWN_DISTANCE_M:
+        pwm = PWM_SLOW
 
     left, right = boat.compute_commands_diff(
         error,
@@ -136,6 +132,28 @@ def execute_decision(boat, decision):
         PWM_MAX=PWM_MAX,
     )
     boat.control_motor(left, right)
+
+
+def turn_in_place(boat, desired_heading_deg):
+    """Oriente le bateau vers un cap compas sans avancer."""
+    error = wrap_angle(math.radians(desired_heading_deg) - boat.heading)
+
+    if abs(error) < math.radians(TURN_IN_PLACE_TOLERANCE_DEG):
+        boat.stop_motor()
+        return
+
+    turn = int(max(-PWM_MAX, min(PWM_MAX, TURN_IN_PLACE_GAIN * error)))
+    boat.control_motor(turn, -turn)
+
+
+def publish_terminal_state(boat, state):
+    """Annonce DONE ou ABORT au partenaire avant de quitter la boucle."""
+    for _ in range(TERMINAL_STATE_REPEATS):
+        try:
+            boat.update_fleet(state=state, ready=False)
+        except Exception as error:
+            print("[MISSION] Impossible de publier l'état", state, ":", error)
+        time.sleep(CONTROL_PERIOD_S)
 
 
 def run_cooperative_mission(
@@ -201,17 +219,15 @@ def run_cooperative_mission(
 
             other = other_boats[0]
 
-            if other.get("age", float("inf")) > MAX_PARTNER_AGE_S:
+            partner_done = other.get("state") == controller.DONE
+            if not partner_done and other.get("age", float("inf")) > MAX_PARTNER_AGE_S:
                 boat.stop_motor()
                 controller.abort("Données du partenaire périmées")
                 state = controller.ABORT
                 ready = False
                 # Publier explicitement ABORT pour que le partenaire
                 # puisse lui aussi interrompre sa mission.
-                try:
-                    boat.update_fleet(state=state, ready=ready)
-                except Exception as error:
-                    print("[MISSION] Impossible de publier ABORT :", error)
+                publish_terminal_state(boat, state)
                 print("[MISSION] ABORT : données du partenaire périmées.")
                 break
 
@@ -269,12 +285,7 @@ def run_cooperative_mission(
 
             if state in (controller.ABORT, controller.DONE):
                 boat.stop_motor()
-                # Publier l'état terminal avant de quitter : sinon le pair
-                # ne reçoit jamais DONE/ABORT depuis cette boucle.
-                try:
-                    boat.update_fleet(state=state, ready=ready)
-                except Exception as error:
-                    print("[MISSION] Impossible de publier l'état terminal :", error)
+                publish_terminal_state(boat, state)
 
                 print("[MISSION] Fin de mission :", state)
 

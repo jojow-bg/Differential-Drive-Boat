@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 
@@ -37,7 +36,9 @@ def main():
     base_b = (48.198903, -3.014986)
     waypoint_goal = (48.198944, -3.015478)
 
-    base_position = base_a if role == "A" else base_b
+    # Après le demi-tour, A est passé de l'autre côté de B : chacun rentre
+    # à la base de son nouveau côté, sinon les deux bateaux se croisent.
+    return_base = base_b if role == "A" else base_a
     boat_id = int(os.environ["DDBOAT_ID"])
 
     # --------------------------------------------------
@@ -67,7 +68,7 @@ def main():
         print("Mission de capture coopérative")
         print("Rôle :", role)
         print("Identifiant :", boat_id)
-        print("Base :", base_position)
+        print("Base de retour :", return_base)
         print("Cible :", waypoint_goal)
         print("===================================")
 
@@ -77,7 +78,7 @@ def main():
             boat=boat,
             boat_id=boat_id,
             is_orbiting_boat=(role == "A"),
-            base_position=base_position,
+            base_position=return_base,
             waypoint_goal=waypoint_goal,
             orbit_radius_m=5.0,
         )
@@ -90,7 +91,6 @@ def main():
 
     finally:
         # Arrêt moteur prioritaire avant de fermer le matériel.
-        boat.back_to_base()
         if boat is not None:
             try:
                 boat.stop_motor()
