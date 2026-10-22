@@ -10,7 +10,7 @@ APPROACH_TOLERANCE_M = 5.0
 HEADING_TOLERANCE_DEG = 10.0
 MAX_GPS_AGE_S = 2.0             # 5 s = jusqu'à ~10 m d'erreur à 2 m/s
 MAX_LOOP_GAP_S = 2.0            # trou maximal dans la boucle de contrôle
-CONFIRM_TIME_S = 1.5            # une condition doit rester vraie ce temps avant validation
+CONFIRM_TIME_S = 1.3           # une condition doit rester vraie ce temps avant validation
 MIN_LATERAL_OFFSET_M = 0.5      # écart minimal à la ligne pour décider du côté
 ORBIT_LOOKAHEAD_DEG = 10.0
 APPROACH_STANDOFF_M = 1.0       # recul du centre de formation avant la bouée
