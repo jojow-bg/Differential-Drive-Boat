@@ -272,8 +272,8 @@ class CatchController:
         half = SEPARATION_M / 2.0
 
         self.approach_targets = {
-            1: (x0 + nx * half, ny * half),
-            -1: (x0 -nx * half, -ny * half),
+            1: (x0 + nx * half, y0 + ny * half),
+            -1: (x0 -nx * half, y0 -ny * half),
         }
 
         # Rôles : A orbite autour de B.

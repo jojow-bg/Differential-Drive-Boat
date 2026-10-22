@@ -91,7 +91,7 @@ def execute_decision(boat, decision):
     # le cap est prioritaire. On tourne sur place au lieu de naviguer
     # vers ce point et d'écraser le cap demandé.
     if decision.get("hold_position") and desired_heading is not None:
-        desired_math = math.radians(desired_heading - 90.0)
+        desired_math = math.radians(desired_heading)
         error = wrap_angle(desired_math - boat.heading)
         turn = int(max(-PWM_MAX, min(PWM_MAX, 80.0 * error)))
         if abs(error) < math.radians(10.0):
@@ -123,7 +123,7 @@ def execute_decision(boat, decision):
 
     # ddboat.heading_to_compass() = (90 + degrees(heading)) % 360.
     # Donc le cap compas se convertit en angle interne par cap - 90°.
-    desired_math = math.radians(desired_heading - 90.0)
+    desired_math = math.radians(desired_heading)
     error = wrap_angle(desired_math - boat.heading)
 
     pwm = PWM_CRUISE
