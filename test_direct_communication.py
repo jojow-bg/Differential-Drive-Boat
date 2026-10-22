@@ -52,9 +52,9 @@ try:
         else:
             for boat in others:
                 print(
-                    "Reçu {id} : lat={latitude:.6f}, "
-                    "lon={longitude:.6f}, cap={heading_deg:.1f}°, "
-                    "âge={age:.1f}s".format(**boat)
+                    "Reçu {} : lat={}, "
+                    "lon={}, cap={}°, "
+                    "âge={}s".format(boat["id"], boat["latitude"], boat["longitude"], boat["heading_deg"], boat["age"])
                 )
 
         time.sleep(1.0)

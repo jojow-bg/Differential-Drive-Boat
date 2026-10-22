@@ -38,6 +38,7 @@ class ddboat:
         self.y = None
         self.lat_rad = None
         self.lon_rad = None
+        self.gps_last_update = None
         self.heading = None
         self.motor_left = 0
         self.motor_right = 0
@@ -50,10 +51,10 @@ class ddboat:
             (np.deg2rad(48.199707), np.deg2rad(-3.016404)),  
             (np.deg2rad(48.199814), np.deg2rad(-3.015137)),  
         ]
-        
+
         # Configuration de la communication entre bateaux.
         # Mode par défaut : serveur central.
-        comm_mode = os.getenv("DDBOAT_COMM_MODE", "server").lower()
+        comm_mode = os.getenv("DDBOAT_COMM_MODE", "direct").lower()
         boat_id = int(os.getenv("DDBOAT_ID", "2"))
 
         if comm_mode == "direct":
@@ -85,10 +86,7 @@ class ddboat:
             )
 
         else:
-            raise ValueError(
-                f"Mode de communication inconnu : {comm_mode}. "
-                "Utilise 'server' ou 'direct'."
-            )
+            raise ValueError("Mode de communication inconnu : {}. Utilise 'server' ou 'direct'.".format(comm_mode))
 
 
 
@@ -100,6 +98,7 @@ class ddboat:
             lon_rad = nmea_to_radians(lon, dir_lon)
             self.lat_rad = lat_rad
             self.lon_rad = lon_rad
+            self.gps_last_update = time.monotonic()
             
 
     def get_calibrated_heading(self, raw_mag):
@@ -118,7 +117,7 @@ class ddboat:
     def heading_to_compass(self):
         return (90 + math.degrees(self.heading)) % 360
 
-    def update_fleet(self):
+    def update_fleet(self, state=None, ready=False):
         """Envoie notre position et récupère celles des autres bateaux."""
 
         if self.lat_rad is None or self.lon_rad is None:
@@ -130,7 +129,9 @@ class ddboat:
         self.fleet.update_own_position(
             latitude=math.degrees(self.lat_rad),
             longitude=math.degrees(self.lon_rad),
-            cap=self.heading_to_compass()
+            cap=self.heading_to_compass(),
+            state=state,
+            ready=ready
         )
 
         return self.fleet.get_other_boats()
@@ -165,7 +166,7 @@ class ddboat:
             "x": self.x,
             "y": self.y,
             "heading_deg": (
-                math.degrees(self.heading)
+                self.heading_to_compass()
                 if self.heading is not None else None
             ),
             "motor_left": getattr(self, "motor_left", 0),
@@ -284,6 +285,8 @@ class ddboat:
 
             self.update_heading()
             self.update_position(lat_origin, lon_origin)
+
+            self.update_fleet()
 
             current_pos =np.array([[self.x], [self.y]])
 
@@ -433,6 +436,8 @@ class ddboat:
                 self.update_gps()
                 self.update_position()
                 self.update_heading()
+
+                self.update_fleet()
 
                 distance = np.hypot(self.x - stop_point[0,0], self.y - stop_point[1,0])
                 print("distance à à ce point : ", distance, "metres")
