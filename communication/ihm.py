@@ -302,7 +302,6 @@ except Exception:
 maximize_window()
 
 # ---- En-tête ----
-fig.text(0.030, 0.952, "◆", color=ACCENT, fontsize=20, va="center")
 fig.text(0.050, 0.960, "DDBoat", color=TEXT, fontsize=20,
          fontweight="bold", va="center")
 fig.text(0.050, 0.930, "Télémétrie en direct  ·  Lac de Guerlédan",
